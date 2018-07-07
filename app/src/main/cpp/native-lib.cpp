@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <cmath>
 #include <random>
+#include <algorithm>
 
 #include <android/log.h>
 
@@ -11,10 +12,10 @@
 #define TAG "Java_hu_hexadecimal_nativetest_MainActivity"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 
-const int array_size = 16384;
+const int array_size = 32768;
 const int pos = 2040;
 const int min = 100;
-const int max = 5000;
+const int max = 8000;
 int number = max + 1;
 
 extern "C" JNIEXPORT jstring JNICALL Java_hu_hexadecimal_nativetest_MainActivity_stringFromJNI(
@@ -54,7 +55,7 @@ extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_ge
 extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_orderArray(JNIEnv *env, jobject jobj, jintArray jarray)
 {
     jint * array = env->GetIntArrayElements(jarray, 0);
-    for (int i = array_size-1; i >= 0; i--) {
+    /*for (int i = array_size-1; i >= 0; i--) {
         for (int j = 0; j < i; j++ ) {
             if (array[i] < array[j]) {
                 int tmp = array[i];
@@ -62,7 +63,9 @@ extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_or
                 array[j] = tmp;
             }
         }
-    }
+    }*/
+
+    std::sort(array, array + array_size);
     int found = -1;
     for (int i = 0; i < array_size; i++) {
         if (array[i] == number) {
@@ -70,6 +73,7 @@ extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_or
             break;
         }
     }
+    LOGI("NATIVE - array: 1. %i , 101. number: %i, half. %i", array[0], array[100], array[array_size / 2]);
 
     env->ReleaseIntArrayElements(jarray, array, 0);
     return found;

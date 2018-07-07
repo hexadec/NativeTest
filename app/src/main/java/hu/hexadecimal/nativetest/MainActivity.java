@@ -8,6 +8,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Random;
 
 public class MainActivity extends Activity {
@@ -20,10 +21,10 @@ public class MainActivity extends Activity {
     public static String TAG = "NativeTest";
 
     /* Constants for arrays and random numbers */
-    final int array_size = 16384;
+    final int array_size = 32768;
     final int pos = 2040;
     final int min = 100;
-    final int max = 5000;
+    final int max = 8000;
     int number = max + 1;
     int[] array;
 
@@ -44,7 +45,7 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 long r = new Random().nextLong();
-                long touse = 10000000000L + r % 100000;
+                final long touse = 10000000000L + r % 100000;
 
                 Log.i(TAG, "Divisors - Starting up: native");
                 long start_time = System.nanoTime();
@@ -62,7 +63,7 @@ public class MainActivity extends Activity {
 
                     @Override
                     public void run() {
-                        divr.setText(Html.fromHtml("<b>Divisors</b><br/>Native: " + div_native_time / 1000 + " μs\nJava: " + div_java_time / 1000 + " μs", Html.FROM_HTML_MODE_LEGACY));
+                        divr.setText(Html.fromHtml("<b>Divisors </b>(" + touse +")<br/>Native: " + div_native_time / 1000 + " μs\nJava: " + div_java_time / 1000 + " μs", Html.FROM_HTML_MODE_LEGACY));
                         Toast.makeText(MainActivity.this, div_native_result + "/" + div_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -83,7 +84,7 @@ public class MainActivity extends Activity {
 
                     @Override
                     public void run() {
-                        randomr.setText(Html.fromHtml("<b>Random integer generation: </b><br/>Native: " + random_native_time + " ms\nJava: " + random_java_time + " ms", Html.FROM_HTML_MODE_LEGACY));
+                        randomr.setText(Html.fromHtml("<b>Random integer generation: </b>(" + array_size + ")<br/>Native: " + random_native_time + " ms\nJava: " + random_java_time + " ms", Html.FROM_HTML_MODE_LEGACY));
                         Toast.makeText(MainActivity.this, random_native_result + "/" + random_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -107,7 +108,7 @@ public class MainActivity extends Activity {
 
                     @Override
                     public void run() {
-                        arrayr.setText(Html.fromHtml("<b>Arrays order: </b><br/>Native: " + array_native_time + " ms\nJava: " + array_java_time + " ms", Html.FROM_HTML_MODE_LEGACY));
+                        arrayr.setText(Html.fromHtml("<b>Arrays order: </b>(" + array_size + ")<br/>Native: " + array_native_time + " ms\nJava: " + array_java_time + " ms", Html.FROM_HTML_MODE_LEGACY));
                         Toast.makeText(MainActivity.this, array_native_result + "/" + array_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -135,7 +136,7 @@ public class MainActivity extends Activity {
     }
 
     public int orderArrayJava() {
-        for (int i = array_size-1; i >= 0; i--) {
+        /*for (int i = array_size-1; i >= 0; i--) {
             for (int j = 0; j < i; j++) {
                 if (array[i] < array[j]) {
                     int tmp = array[i];
@@ -143,7 +144,8 @@ public class MainActivity extends Activity {
                     array[j] = tmp;
                 }
             }
-        }
+        }*/
+        Arrays.sort(array);
         int found = -1;
         for (int i = 0; i < array_size; i++) {
             if (array[i] == number) {
@@ -151,7 +153,7 @@ public class MainActivity extends Activity {
                 break;
             }
         }
-
+        Log.i(TAG, "Array: " + array[0] + " - " + array[100] + " - " + array[array_size / 2]);
         return found;
     }
 
