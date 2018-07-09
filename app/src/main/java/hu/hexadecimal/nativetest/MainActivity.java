@@ -10,6 +10,7 @@ import android.widget.Toast;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Random;
+import java.lang.Math;
 
 public class MainActivity extends Activity {
 
@@ -24,9 +25,16 @@ public class MainActivity extends Activity {
     final int array_size = 32768;
     final int pos = 2040;
     final int min = 100;
-    final int max = 8000;
+    final int max = 25000;
     int number = max + 1;
     int[] array;
+
+    /* Arrays for prime numbers */
+    long[] arr0;
+    long[] arr1;
+    long[] arr2;
+    long[] arr3;
+    int pos0, pos1, pos2, pos3 = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,12 +48,13 @@ public class MainActivity extends Activity {
         final TextView divr = findViewById(R.id.div_result);
         final TextView randomr = findViewById(R.id.random_result);
         final TextView arrayr = findViewById(R.id.array_result);
+        final TextView primer = findViewById(R.id.prime_result);
         //Not using UI thread w/ long operations to avoid being killed
         new Thread(new Runnable() {
             @Override
             public void run() {
-                long r = new Random().nextLong();
-                final long touse = 10000000000L + r % 100000;
+                int r = new Random().nextInt(100000);
+                final long touse = 10000000000L + r;
 
                 Log.i(TAG, "Divisors - Starting up: native");
                 long start_time = System.nanoTime();
@@ -112,6 +121,37 @@ public class MainActivity extends Activity {
                         Toast.makeText(MainActivity.this, array_native_result + "/" + array_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
+
+                final int number = 1000000;
+                Log.d(TAG, "Primes - Starting up: native");
+                start_time = System.currentTimeMillis();
+                final long[] prime_native_result = primesUntilX(number);
+                end_time = System.currentTimeMillis();
+                final long prime_native_time = end_time - start_time;
+
+                Log.e(TAG, "1. " + prime_native_result[0] + " Half. " +
+                        prime_native_result[prime_native_result.length/2] + " Max. " +
+                        prime_native_result[prime_native_result.length - 1]);
+
+                Log.d(TAG, "Native done, starting java");
+                start_time = System.currentTimeMillis();
+                primesUntilXJava(number);
+                final int prime_java_result = pos0;
+                end_time = System.currentTimeMillis();
+                final long prime_java_time = end_time - start_time;
+                Log.e(TAG, "1. " + arr0[0] + " Half. (" +
+                                prime_java_result/2 + ") " +
+                        arr0[prime_java_result/2] + " Max. " +
+                        arr0[prime_java_result - 1]);
+
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        primer.setText(Html.fromHtml("<b>MultiThreading / Prime finding: </b>(" + number + ")<br/>Native: " + prime_native_time + " ms\nJava: " + prime_java_time + " ms", Html.FROM_HTML_MODE_LEGACY));
+                        Toast.makeText(MainActivity.this, prime_native_result.length + "/" + prime_java_result, Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         }).start();
     }
@@ -136,15 +176,6 @@ public class MainActivity extends Activity {
     }
 
     public int orderArrayJava() {
-        /*for (int i = array_size-1; i >= 0; i--) {
-            for (int j = 0; j < i; j++) {
-                if (array[i] < array[j]) {
-                    int tmp = array[i];
-                    array[i] = array[j];
-                    array[j] = tmp;
-                }
-            }
-        }*/
         Arrays.sort(array);
         int found = -1;
         for (int i = 0; i < array_size; i++) {
@@ -157,14 +188,80 @@ public class MainActivity extends Activity {
         return found;
     }
 
+    public void primesUntilXJava(final long x) {
+        int max = 0;
+        if (x <= 100) max = 40;
+        else {
+            double result = x / (Math.log10(x) - 1) * 1.1;
+            max = (int) Math.ceil(result);
+        }
+        arr0 = new long[max];
+        arr1 = new long[max / 3 * 2];
+        arr2 = new long[max / 3 * 2];
+        arr3 = new long[max / 2];
+        Thread t0 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                pos0 = calculate(2, x / 4, arr0);
+            }
+        });
+        Thread t1 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                pos1 = calculate(x / 4, x / 2, arr1);
+            }
+        });
+        Thread t2 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                pos2 = calculate(x / 2, x / 4 * 3, arr2);
+            }
+        });
+        t0.start();
+        t1.start();
+        t2.start();
+        pos3 = calculate(x/ 4 * 3, x, arr3);
+        try {
+            t0.join();
+            t1.join();
+            t2.join();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.arraycopy(arr1, 0, arr0, pos0, pos1);
+        System.arraycopy(arr2, 0, arr0, pos0 + pos1, pos2);
+        System.arraycopy(arr3, 0, arr0, pos0 + pos1 + pos2, pos3);
+        pos0 += pos1 + pos2 + pos3;
+    }
+
+    public int calculate(long from, long to, long[] in) {
+        int pos = 0;
+        for (; from < to; from++) {
+            long until = (long) Math.sqrt(from);
+            long divs = 0;
+            for (long i = 2; i <= until; i++) {
+                if (from % i == 0) {
+                    ++divs;
+                    break;
+                }
+            }
+            if (divs == 0) {
+                in[pos++] = from;
+            }
+        }
+        return pos;
+    }
+
     public native long getDivisors(long number);
     public native int generateRandom(boolean which);
     public native int orderArray(int[] array);
+    public native long[] primesUntilX(long x);
 
     @Override
     protected void onDestroy() {
         File cache = MainActivity.this.getApplicationContext().getCacheDir();
         deleteFolder(cache);
+        System.exit(0);
         super.onDestroy();
     }
 

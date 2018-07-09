@@ -1,10 +1,11 @@
 #include <jni.h>
-#include <string>
-#include <thread>
-#include <unistd.h>
 #include <cmath>
 #include <random>
 #include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <thread>
+#include <unistd.h>
 
 #include <android/log.h>
 
@@ -12,11 +13,118 @@
 #define TAG "Java_hu_hexadecimal_nativetest_MainActivity"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 
+void calc1(int64_t, int64_t);
+void calc2(int64_t, int64_t);
+void calc3(int64_t, int64_t);
+int64_t pi(int64_t);
+
 const int array_size = 32768;
 const int pos = 2040;
 const int min = 100;
-const int max = 8000;
+const int max = 25000;
 int number = max + 1;
+
+
+//Variables for primesUntilX
+int64_t * l;
+int64_t * l1;
+int64_t * l2;
+int64_t * l3;
+int32_t pos0,pos1,pos2,pos3 = 0;
+
+void calc1(int64_t from, int64_t to) {
+    for (; from < to; from++) {
+        int64_t c = sqrt(from);
+        int64_t div = 0;
+        for (int64_t t = 2; t <= c; t++) {
+            if (from%t==0) {
+                ++div;
+                break;
+            }
+        }
+        if (!div) {
+            l[pos0++] = from;
+        }
+    }
+}
+
+void calc2(int64_t from, int64_t to) {
+    for (; from < to; from++) {
+        int64_t c = sqrt(from);
+        int64_t div = 0;
+        for (int64_t t = 2; t <= c; t++) {
+            if (from%t==0) {
+                ++div;
+                break;
+            }
+        }
+        if (!div) {
+            l1[pos1++] = from;
+        }
+    }
+}
+
+void calc3(int64_t from, int64_t to) {
+    for (; from < to; from++) {
+        int64_t c = sqrt(from);
+        int64_t div = 0;
+        for (int64_t t = 2; t <= c; t++) {
+            if (from%t==0) {
+                ++div;
+                break;
+            }
+        }
+        if (!div) {
+            l2[pos2++] = from;
+        }
+    }
+}
+
+//Prime numbers until x, using approcc
+int64_t pi(int64_t x) {
+    if (x <= 100) return 40;
+    double result = x/(log10(x) - 1) * 1.1;
+    return (int64_t) ceil(result);
+}
+
+extern "C" JNIEXPORT jlongArray JNICALL Java_hu_hexadecimal_nativetest_MainActivity_primesUntilX(JNIEnv *env, jobject jobj, jlong x)
+{
+    int64_t max = (int64_t) x;
+    l = new int64_t[pi(max)];
+    l1 = new int64_t[pi(max) / 3 * 2];
+    l2 = new int64_t[pi(max) / 3 * 2];
+    l3 = new int64_t[pi(max) / 2];
+    std::thread t1(calc1, 2, max/4);
+    std::thread t2(calc2, max/4, max/2);
+    std::thread t3(calc3, max/2, (max/4)+(max/2));
+    //calc4
+    for (int64_t i = (max/4)+(max/2); i < max; i++) {
+        int64_t c = sqrt(i);
+        int64_t div = 0;
+        for (int64_t t = 2; t <= c; t++) {
+            if (i%t==0) {
+                ++div;
+                break;
+            }
+        }
+        if (!div) {
+            l3[pos3++] = i;
+        }
+    }
+    t1.join();
+    t2.join();
+    t3.join();
+
+    std::copy(l1, l1 + pos1, l + pos0);
+    std::copy(l2, l2 + pos2, l + (pos0 += pos1));
+    std::copy(l3, l3 + pos3, l + (pos0 += pos2));
+    pos0 += pos3;
+
+    jlongArray result;
+    result = env->NewLongArray(pos0);
+    env->SetLongArrayRegion(result, 0, pos0, l);
+    return result;
+}
 
 extern "C" JNIEXPORT jstring JNICALL Java_hu_hexadecimal_nativetest_MainActivity_stringFromJNI(
         JNIEnv *env,
@@ -55,15 +163,6 @@ extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_ge
 extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_orderArray(JNIEnv *env, jobject jobj, jintArray jarray)
 {
     jint * array = env->GetIntArrayElements(jarray, 0);
-    /*for (int i = array_size-1; i >= 0; i--) {
-        for (int j = 0; j < i; j++ ) {
-            if (array[i] < array[j]) {
-                int tmp = array[i];
-                array[i] = array[j];
-                array[j] = tmp;
-            }
-        }
-    }*/
 
     std::sort(array, array + array_size);
     int found = -1;

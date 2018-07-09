@@ -26,13 +26,19 @@ android {
         debug {
             minifyEnabled false
             ndk {
-                abiFilters "armeabi-v7a", "arm64-v8a", "x86"
+                abiFilters "armeabi-v7a", "arm64-v8a"
             }
         }
     }
     externalNativeBuild {
         cmake {
             path "CMakeLists.txt"
+        }
+    }
+    sourceSets {
+        main {
+            // let gradle pack the shared library into apk
+            jniLibs.srcDirs = ['libs']
         }
     }
 }
