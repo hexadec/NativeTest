@@ -53,18 +53,21 @@ public class MainActivity extends Activity {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                /*Generating number to divide*/
                 int r = new Random().nextInt(100000);
-                final long touse = 10000000000L + r;
+                final long DIVIDEND = 1000000000000L + r;
+                /*Maximum prime number to find*/
+                final int MAX_PRIME = 1000000;
 
                 Log.i(TAG, "Divisors - Starting up: native");
                 long start_time = System.nanoTime();
-                final long div_native_result = getDivisors(touse);
+                final long div_native_result = getDivisors(DIVIDEND);
                 long end_time = System.nanoTime();
                 final long div_native_time = end_time - start_time;
 
                 Log.i(TAG, "Native done, starting java");
                 start_time = System.nanoTime();
-                final long div_java_result = divisorsJava(touse);
+                final long div_java_result = divisorsJava(DIVIDEND);
                 end_time = System.nanoTime();
                 final long div_java_time = end_time - start_time;
 
@@ -72,7 +75,7 @@ public class MainActivity extends Activity {
 
                     @Override
                     public void run() {
-                        divr.setText(Html.fromHtml("<b>Divisors </b>(" + touse +")<br/>Native: " + div_native_time / 1000 + " μs\nJava: " + div_java_time / 1000 + " μs", Html.FROM_HTML_MODE_LEGACY));
+                        divr.setText(Html.fromHtml("<b>Divisors </b>(" + DIVIDEND +")<br/>Native: " + div_native_time / 1000 + " μs\nJava: " + div_java_time / 1000 + " μs", Html.FROM_HTML_MODE_LEGACY));
                         Toast.makeText(MainActivity.this, div_native_result + "/" + div_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -122,10 +125,10 @@ public class MainActivity extends Activity {
                     }
                 });
 
-                final int number = 1000000;
+
                 Log.d(TAG, "Primes - Starting up: native");
                 start_time = System.currentTimeMillis();
-                final long[] prime_native_result = primesUntilX(number);
+                final long[] prime_native_result = primesUntilX(MAX_PRIME);
                 end_time = System.currentTimeMillis();
                 final long prime_native_time = end_time - start_time;
 
@@ -135,10 +138,11 @@ public class MainActivity extends Activity {
 
                 Log.d(TAG, "Native done, starting java");
                 start_time = System.currentTimeMillis();
-                primesUntilXJava(number);
+                primesUntilXJava(MAX_PRIME);
                 final int prime_java_result = pos0;
                 end_time = System.currentTimeMillis();
                 final long prime_java_time = end_time - start_time;
+
                 Log.e(TAG, "1. " + arr0[0] + " Half. (" +
                                 prime_java_result/2 + ") " +
                         arr0[prime_java_result/2] + " Max. " +
@@ -148,13 +152,14 @@ public class MainActivity extends Activity {
 
                     @Override
                     public void run() {
-                        primer.setText(Html.fromHtml("<b>MultiThreading / Prime finding: </b>(" + number + ")<br/>Native: " + prime_native_time + " ms\nJava: " + prime_java_time + " ms", Html.FROM_HTML_MODE_LEGACY));
+                        primer.setText(Html.fromHtml("<b>MultiThreading / Prime finding: </b>(" + MAX_PRIME + ")<br/>Native: " + prime_native_time + " ms\nJava: " + prime_java_time + " ms", Html.FROM_HTML_MODE_LEGACY));
                         Toast.makeText(MainActivity.this, prime_native_result.length + "/" + prime_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
             }
         }).start();
     }
+
 
     public long divisorsJava(long random) {
         long divs = 1;

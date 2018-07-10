@@ -2,7 +2,7 @@
 #include <cmath>
 #include <random>
 #include <algorithm>
-#include <cstdio>
+#include <fstream>
 #include <cstdlib>
 #include <thread>
 #include <unistd.h>
@@ -119,6 +119,32 @@ extern "C" JNIEXPORT jlongArray JNICALL Java_hu_hexadecimal_nativetest_MainActiv
     std::copy(l2, l2 + pos2, l + (pos0 += pos1));
     std::copy(l3, l3 + pos3, l + (pos0 += pos2));
     pos0 += pos3;
+
+
+    /*std::ofstream file;
+    std::string p = getenv("EXTERNAL_STORAGE"); //"/storage/emulated/0";
+    p += "/primes.txt";
+    file.open(p.c_str());
+    if (file.is_open()) {
+        file.write((char *) l, pos0 * sizeof (int64_t));
+        file.close();
+
+        LOGI("File wrote");
+    }
+    std::ifstream file2;
+    file2.open(p.c_str());
+    if (file2.is_open()) {
+        file2.seekg(0, file2.end);
+        long length = file2.tellg();
+        file2.seekg(0);
+
+        int64_t * buffer = new int64_t[length / sizeof (int64_t)];
+        file2.read((char *) buffer, length);
+
+        LOGI("NATIVE - 1.: %lu , last: %lu", buffer[0], buffer[length / sizeof (int64_t) - 1]);
+    }
+    */
+
 
     jlongArray result;
     result = env->NewLongArray(pos0);
