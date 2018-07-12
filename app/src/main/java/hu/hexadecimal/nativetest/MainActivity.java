@@ -55,7 +55,7 @@ public class MainActivity extends Activity {
             public void run() {
                 /*Generating number to divide*/
                 int r = new Random().nextInt(100000);
-                final long DIVIDEND = 1000000000000L + r;
+                final long DIVIDEND = 100000000000L + r;
                 /*Maximum prime number to find*/
                 final int MAX_PRIME = 1000000;
 
@@ -75,28 +75,28 @@ public class MainActivity extends Activity {
 
                     @Override
                     public void run() {
-                        divr.setText(Html.fromHtml("<b>Divisors </b>(" + DIVIDEND +")<br/>Native: " + div_native_time / 1000 + " μs\nJava: " + div_java_time / 1000 + " μs", Html.FROM_HTML_MODE_LEGACY));
+                        divr.setText(Html.fromHtml("<b>Divisors </b>(" + DIVIDEND +")<br/>Native: " + String.format("%.1f", div_native_time / 1000000.0) + " ms\nJava: " + String.format("%.1f", div_java_time / 1000000.0) + " ms", Html.FROM_HTML_MODE_LEGACY));
                         Toast.makeText(MainActivity.this, div_native_result + "/" + div_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
 
                 Log.d(TAG, "Random - Starting up: native");
-                start_time = System.currentTimeMillis();
+                start_time = System.nanoTime();
                 final int random_native_result = generateRandom(false);
-                end_time = System.currentTimeMillis();
+                end_time = System.nanoTime();
                 final long random_native_time = end_time - start_time;
 
                 Log.d(TAG, "Native done, starting java");
-                start_time = System.currentTimeMillis();
+                start_time = System.nanoTime();
                 final int random_java_result = generateRandomJava(false);
-                end_time = System.currentTimeMillis();
+                end_time = System.nanoTime();
                 final long random_java_time = end_time - start_time;
 
                 runOnUiThread(new Runnable() {
 
                     @Override
                     public void run() {
-                        randomr.setText(Html.fromHtml("<b>Random integer generation: </b>(" + array_size + ")<br/>Native: " + random_native_time + " ms\nJava: " + random_java_time + " ms", Html.FROM_HTML_MODE_LEGACY));
+                        randomr.setText(Html.fromHtml("<b>Random integer generation: </b>(" + array_size + ")<br/>Native: " + String.format("%.1f", random_native_time / 1000000.0) + " ms\nJava: " + String.format("%.1f", random_java_time / 1000000.0)  + " ms", Html.FROM_HTML_MODE_LEGACY));
                         Toast.makeText(MainActivity.this, random_native_result + "/" + random_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -105,22 +105,22 @@ public class MainActivity extends Activity {
                 int[] array_native = new int[array_size];
                 System.arraycopy(array, 0, array_native, 0, array_size);
                 Log.d(TAG, "Arrays - Starting up: native");
-                start_time = System.currentTimeMillis();
+                start_time = System.nanoTime();
                 final int array_native_result = orderArray(array_native);
-                end_time = System.currentTimeMillis();
+                end_time = System.nanoTime();
                 final long array_native_time = end_time - start_time;
 
                 Log.d(TAG, "Native done, starting java");
-                start_time = System.currentTimeMillis();
+                start_time = System.nanoTime();
                 final int array_java_result = orderArrayJava();
-                end_time = System.currentTimeMillis();
+                end_time = System.nanoTime();
                 final long array_java_time = end_time - start_time;
 
                 runOnUiThread(new Runnable() {
 
                     @Override
                     public void run() {
-                        arrayr.setText(Html.fromHtml("<b>Arrays order: </b>(" + array_size + ")<br/>Native: " + array_native_time + " ms\nJava: " + array_java_time + " ms", Html.FROM_HTML_MODE_LEGACY));
+                        arrayr.setText(Html.fromHtml("<b>Arrays order: </b>(" + array_size + ")<br/>Native: " + String.format("%.1f", array_native_time / 1000000.0) + " ms\nJava: " + String.format("%.1f", array_java_time / 1000000.0) + " ms", Html.FROM_HTML_MODE_LEGACY));
                         Toast.makeText(MainActivity.this, array_native_result + "/" + array_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -164,7 +164,7 @@ public class MainActivity extends Activity {
     public long divisorsJava(long random) {
         long divs = 1;
         long upper_limit = (long) Math.sqrt(random);
-        for (int c = 2; c <= upper_limit; c++) {
+        for (long c = 2; c <= upper_limit; c++) {
             if (random % c == 0) divs++;
         }
         return divs*2;
