@@ -13,9 +13,7 @@
 #define TAG "Java_hu_hexadecimal_nativetest_MainActivity"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 
-void calc1(int64_t, int64_t);
-void calc2(int64_t, int64_t);
-void calc3(int64_t, int64_t);
+void calc(int64_t, int64_t, int64_t*, int64_t*);
 int64_t pi(int64_t);
 
 const int array_size = 32768;
@@ -26,56 +24,22 @@ int number = max + 1;
 
 
 //Variables for primesUntilX
-int64_t * l;
-int64_t * l1;
-int64_t * l2;
-int64_t * l3;
-int32_t pos0,pos1,pos2,pos3 = 0;
+int64_t * l, *l1, *l2, *l3;
+int64_t pos0,pos1,pos2,pos3 = 0; //uint32_t is not big enough to count all
 
-void calc1(int64_t from, int64_t to) {
+void calc(int64_t from, int64_t to, int64_t * pos, int64_t * arr) {
     for (; from < to; from++) {
-        int64_t c = sqrt(from);
-        int64_t div = 0;
-        for (int64_t t = 2; t <= c; t++) {
+        uint32_t c = sqrt(from);
+        //uint32_t should be enough to hold the square root of max_(u)int64_t
+        bool div = false;
+        for (uint32_t t = 2; t <= c; t++) {
             if (from%t==0) {
-                ++div;
+                div = true;
                 break;
             }
         }
         if (!div) {
-            l[pos0++] = from;
-        }
-    }
-}
-
-void calc2(int64_t from, int64_t to) {
-    for (; from < to; from++) {
-        int64_t c = sqrt(from);
-        int64_t div = 0;
-        for (int64_t t = 2; t <= c; t++) {
-            if (from%t==0) {
-                ++div;
-                break;
-            }
-        }
-        if (!div) {
-            l1[pos1++] = from;
-        }
-    }
-}
-
-void calc3(int64_t from, int64_t to) {
-    for (; from < to; from++) {
-        int64_t c = sqrt(from);
-        int64_t div = 0;
-        for (int64_t t = 2; t <= c; t++) {
-            if (from%t==0) {
-                ++div;
-                break;
-            }
-        }
-        if (!div) {
-            l2[pos2++] = from;
+            arr[(*pos)++] = from;
         }
     }
 }
@@ -94,23 +58,11 @@ extern "C" JNIEXPORT jlongArray JNICALL Java_hu_hexadecimal_nativetest_MainActiv
     l1 = new int64_t[pi(max) / 3 * 2];
     l2 = new int64_t[pi(max) / 3 * 2];
     l3 = new int64_t[pi(max) / 2];
-    std::thread t1(calc1, 2, max/4);
-    std::thread t2(calc2, max/4, max/2);
-    std::thread t3(calc3, max/2, (max/4)+(max/2));
+    std::thread t1(calc, 2, max/4, &pos0, l);
+    std::thread t2(calc, max/4, max/2, &pos1, l1);
+    std::thread t3(calc, max/2, (max/4)+(max/2), &pos2, l2);
     //calc4
-    for (int64_t i = (max/4)+(max/2); i < max; i++) {
-        int64_t c = sqrt(i);
-        int64_t div = 0;
-        for (int64_t t = 2; t <= c; t++) {
-            if (i%t==0) {
-                ++div;
-                break;
-            }
-        }
-        if (!div) {
-            l3[pos3++] = i;
-        }
-    }
+    calc((max/4)+(max/2), max, &pos3, l3);
     t1.join();
     t2.join();
     t3.join();
@@ -120,6 +72,9 @@ extern "C" JNIEXPORT jlongArray JNICALL Java_hu_hexadecimal_nativetest_MainActiv
     std::copy(l3, l3 + pos3, l + (pos0 += pos2));
     pos0 += pos3;
 
+    delete [] l1;
+    delete [] l2;
+    delete [] l3;
 
     /*std::ofstream file;
     std::string p = getenv("EXTERNAL_STORAGE"); //"/storage/emulated/0";
@@ -149,6 +104,7 @@ extern "C" JNIEXPORT jlongArray JNICALL Java_hu_hexadecimal_nativetest_MainActiv
     jlongArray result;
     result = env->NewLongArray(pos0);
     env->SetLongArrayRegion(result, 0, pos0, l);
+    delete [] l;
     return result;
 }
 
@@ -163,8 +119,8 @@ extern "C" JNIEXPORT jlong JNICALL Java_hu_hexadecimal_nativetest_MainActivity_g
 {
     int64_t divs = 1;
     int64_t num2 = (int64_t) number;
-    int64_t upper_limit = (int64_t) sqrt(num2);
-    for (int64_t i = 2; i <= upper_limit; i++) {
+    uint32_t upper_limit = (uint32_t) sqrt(num2);
+    for (uint32_t i = 2; i <= upper_limit; i++) {
         if (num2%i==0) divs++;
     }
     LOGI("NATIVE - divs: %lu , number: %lu", divs, number);

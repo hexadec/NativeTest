@@ -55,9 +55,9 @@ public class MainActivity extends Activity {
             public void run() {
                 /*Generating number to divide*/
                 int r = new Random().nextInt(100000);
-                final long DIVIDEND = 100000000000L + r;
+                final long DIVIDEND = 1000000000000L + r;
                 /*Maximum prime number to find*/
-                final int MAX_PRIME = 1000000;
+                final int MAX_PRIME = 100000;
 
                 Log.i(TAG, "Divisors - Starting up: native");
                 long start_time = System.nanoTime();
@@ -240,21 +240,21 @@ public class MainActivity extends Activity {
     }
 
     public int calculate(long from, long to, long[] in) {
-        int pos = 0;
+        long pos = 0;
         for (; from < to; from++) {
             long until = (long) Math.sqrt(from);
-            long divs = 0;
+            boolean divs = false;
             for (long i = 2; i <= until; i++) {
                 if (from % i == 0) {
-                    ++divs;
+                    divs = true;
                     break;
                 }
             }
-            if (divs == 0) {
-                in[pos++] = from;
+            if (!divs) {
+                in[(int)pos++] = from;
             }
         }
-        return pos;
+        return (int) pos;
     }
 
     public native long getDivisors(long number);
