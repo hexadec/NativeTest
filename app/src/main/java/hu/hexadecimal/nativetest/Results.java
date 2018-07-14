@@ -11,6 +11,15 @@ public class Results {
     private String resultUnit;
     private double resultDecimalOffset;
 
+
+    /**
+     *  Constructor of Results class
+     * @param name Name of the measurement
+     * @param parameterUnit Unit of the independent variables
+     * @param resultUnit Unit of the dependent variables
+     * @param decimalOffset Decimal offset of the dependent variables, used as result * 10^decimalOffset
+     *                      Use 0 to change nothing
+     */
     Results(String name, String parameterUnit, String resultUnit, double decimalOffset) {
         this.name = name;
         parameterList = new LinkedList<>();
@@ -20,12 +29,22 @@ public class Results {
         resultDecimalOffset = Math.pow(10, decimalOffset);
     }
 
+    /**
+     * Adds and independent - dependent pair to the class
+     * @param parameter independent variable
+     * @param result dependent variable
+     * @return number of variable pairs
+     */
     int addPair(long parameter, long result) {
         parameterList.addLast(parameter);
         resultList.addLast(result);
         return parameterList.size();
     }
 
+    /**
+     * Convert class to CSV format
+     * @return parameter - result pairs in CSV format, results are modified according to decimalOffset
+     */
     public String toCSV() {
         StringBuilder builder = new StringBuilder();
         builder.append(name);
