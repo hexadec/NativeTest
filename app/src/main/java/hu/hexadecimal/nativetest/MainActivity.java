@@ -9,6 +9,7 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.Random;
 import java.lang.Math;
 
@@ -50,6 +51,7 @@ public class MainActivity extends Activity {
         final TextView arrayr = findViewById(R.id.array_result);
         final TextView primer = findViewById(R.id.prime_result);
         //Not using UI thread w/ long operations to avoid being killed
+        final LinkedList<Results> allResult = new LinkedList<>();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -71,6 +73,9 @@ public class MainActivity extends Activity {
                 end_time = System.nanoTime();
                 final long div_java_time = end_time - start_time;
 
+                Results res = new Results("Divisors", "number", "ms", "ms", -6);
+                res.addTriple(DIVIDEND, div_native_result, div_java_result);
+                //TODO run 5 times with different dividend
                 runOnUiThread(new Runnable() {
 
                     @Override
@@ -79,6 +84,7 @@ public class MainActivity extends Activity {
                         Toast.makeText(MainActivity.this, div_native_result + "/" + div_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
+                allResult.add(res);
 
                 Log.d(TAG, "Random - Starting up: native");
                 start_time = System.nanoTime();
@@ -92,6 +98,7 @@ public class MainActivity extends Activity {
                 end_time = System.nanoTime();
                 final long random_java_time = end_time - start_time;
 
+                //TODO run 5 times with different array size
                 runOnUiThread(new Runnable() {
 
                     @Override
@@ -116,6 +123,7 @@ public class MainActivity extends Activity {
                 end_time = System.nanoTime();
                 final long array_java_time = end_time - start_time;
 
+                //TODO run 5 times, same as before
                 runOnUiThread(new Runnable() {
 
                     @Override
@@ -148,6 +156,7 @@ public class MainActivity extends Activity {
                         arr0[prime_java_result/2] + " Max. " +
                         arr0[prime_java_result - 1]);
 
+                //TODO Run 5 times, with different max prime
                 runOnUiThread(new Runnable() {
 
                     @Override
@@ -158,6 +167,7 @@ public class MainActivity extends Activity {
                 });
             }
         }).start();
+        //TODO write results to csv-s in the end
     }
 
 

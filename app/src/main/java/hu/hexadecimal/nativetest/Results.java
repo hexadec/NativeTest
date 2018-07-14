@@ -6,9 +6,11 @@ import java.util.LinkedList;
 public class Results {
     private String name;
     private LinkedList<Long> parameterList;
-    private LinkedList<Long> resultList;
+    private LinkedList<Long> resultListCPP;
+    private LinkedList<Long> resultListJava;
     private String paramUnit;
-    private String resultUnit;
+    private String resultUnitCPP;
+    private String resultUnitJava;
     private double resultDecimalOffset;
 
 
@@ -16,28 +18,36 @@ public class Results {
      *  Constructor of Results class
      * @param name Name of the measurement
      * @param parameterUnit Unit of the independent variables
-     * @param resultUnit Unit of the dependent variables
+     * @param resultUnitCPP  Unit of the dependent variables (C++)
+     * @param resultUnitJava Unit of the dependent variables (Java)
      * @param decimalOffset Decimal offset of the dependent variables, used as result * 10^decimalOffset
      *                      Use 0 to change nothing
+     *                      If bigger than +/- 8, it will be set to 0
      */
-    Results(String name, String parameterUnit, String resultUnit, double decimalOffset) {
+    Results(String name, String parameterUnit, String resultUnitCPP, String resultUnitJava, int decimalOffset) {
         this.name = name;
         parameterList = new LinkedList<>();
-        resultList = new LinkedList<>();
+        resultListCPP = new LinkedList<>();
+        resultListJava = new LinkedList<>();
         paramUnit = parameterUnit;
-        this.resultUnit = resultUnit;
+        this.resultUnitCPP = resultUnitCPP;
+        this.resultUnitJava = resultUnitJava;
+        if (Math.abs(decimalOffset) > 8)
+            decimalOffset = 0;
         resultDecimalOffset = Math.pow(10, decimalOffset);
     }
 
     /**
      * Adds and independent - dependent pair to the class
      * @param parameter independent variable
-     * @param result dependent variable
+     * @param resultCPP dependent variable (C++)
+     * @param resultJava dependent variable (Java)
      * @return number of variable pairs
      */
-    int addPair(long parameter, long result) {
+    int addTriple(long parameter, long resultCPP, long resultJava) {
         parameterList.addLast(parameter);
-        resultList.addLast(result);
+        resultListCPP.addLast(resultCPP);
+        resultListJava.addLast(resultJava);
         return parameterList.size();
     }
 
@@ -51,7 +61,9 @@ public class Results {
         builder.append("\n");
         builder.append(paramUnit);
         builder.append(";");
-        builder.append(resultUnit);
+        builder.append(resultUnitCPP);
+        builder.append(";");
+        builder.append(resultUnitJava);
         builder.append(";\n");
         String pattern = "0";
         for (int i = 1; i > resultDecimalOffset; i /= 10) {
@@ -62,7 +74,9 @@ public class Results {
         for (int i = 0; i < parameterList.size(); i++) {
             builder.append(parameterList.get(0));
             builder.append(";");
-            builder.append(dec.format(resultList.get(0) * resultDecimalOffset));
+            builder.append(dec.format(resultListCPP.get(0) * resultDecimalOffset));
+            builder.append(";");
+            builder.append(dec.format(resultListJava.get(0) * resultDecimalOffset));
             builder.append(";\n");
         }
         return builder.toString();
