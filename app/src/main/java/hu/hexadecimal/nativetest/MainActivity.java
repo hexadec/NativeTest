@@ -1,8 +1,12 @@
 package hu.hexadecimal.nativetest;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.SystemClock;
 import android.text.Html;
 import android.util.Log;
 import android.widget.TextView;
@@ -107,7 +111,7 @@ public class MainActivity extends Activity {
 
                     @Override
                     public void run() {
-                        divr.setText(Html.fromHtml("<b>Divisors </b>(" + DIVIDEND +")<br/>Native: " + String.format("%.1f", div_native_time / 1000000.0) + " ms\nJava: " + String.format("%.1f", div_java_time / 1000000.0) + " ms", Html.FROM_HTML_MODE_LEGACY));
+                        divr.setText(Html.fromHtml("<b>Divisors </b>(" + DIVIDEND +")<br/>Native: " + String.format("%.1f", div_native_time / 1000000.0) + " ms\nJava: " + String.format("%.1f", div_java_time / 1000000.0) + " ms"));
                         Toast.makeText(MainActivity.this, div_native_result + "/" + div_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -157,7 +161,7 @@ public class MainActivity extends Activity {
 
                     @Override
                     public void run() {
-                        randomr.setText(Html.fromHtml("<b>Random integer generation: </b>(" + array_size + ")<br/>Native: " + String.format("%.1f", random_native_time / 1000000.0) + " ms\nJava: " + String.format("%.1f", random_java_time / 1000000.0)  + " ms", Html.FROM_HTML_MODE_LEGACY));
+                        randomr.setText(Html.fromHtml("<b>Random integer generation: </b>(" + array_size + ")<br/>Native: " + String.format("%.1f", random_native_time / 1000000.0) + " ms\nJava: " + String.format("%.1f", random_java_time / 1000000.0)  + " ms"));
                         Toast.makeText(MainActivity.this, random_native_result + "/" + random_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -166,7 +170,7 @@ public class MainActivity extends Activity {
 
                     @Override
                     public void run() {
-                        arrayr.setText(Html.fromHtml("<b>Arrays order: </b>(" + array_size + ")<br/>Native: " + String.format("%.1f", array_native_time / 1000000.0) + " ms\nJava: " + String.format("%.1f", array_java_time / 1000000.0) + " ms", Html.FROM_HTML_MODE_LEGACY));
+                        arrayr.setText(Html.fromHtml("<b>Arrays order: </b>(" + array_size + ")<br/>Native: " + String.format("%.1f", array_native_time / 1000000.0) + " ms\nJava: " + String.format("%.1f", array_java_time / 1000000.0) + " ms"));
                         Toast.makeText(MainActivity.this, array_native_result + "/" + array_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -206,7 +210,7 @@ public class MainActivity extends Activity {
 
                     @Override
                     public void run() {
-                        primer.setText(Html.fromHtml("<b>MultiThreading / Prime finding: </b>(" + MAX_PRIME + ")<br/>Native: " + prime_native_time + " ms\nJava: " + prime_java_time + " ms", Html.FROM_HTML_MODE_LEGACY));
+                        primer.setText(Html.fromHtml("<b>MultiThreading / Prime finding: </b>(" + MAX_PRIME + ")<br/>Native: " + prime_native_time + " ms\nJava: " + prime_java_time + " ms"));
                         Toast.makeText(MainActivity.this, prime_native_result.length + "/" + prime_java_result, Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -214,9 +218,10 @@ public class MainActivity extends Activity {
         });
         t.start();
 
-        new Thread(new Runnable() {
+        Thread save = new Thread(new Runnable() {
             @Override
             public void run() {
+                SystemClock.sleep(5000);
                 try {
                     t.join();
                 } catch (Exception e) {
@@ -231,11 +236,23 @@ public class MainActivity extends Activity {
                     } catch (IOException e) {
                         e.printStackTrace();
                         Log.e(TAG, "Cannot save results! -- " + r.getName());
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(MainActivity.this,
+                                        "Cannot save files, please enable Storage permission in settings", Toast.LENGTH_LONG).show();
+                            }
+                        });
                     }
                 }
                 Log.i(TAG, "Files written: " + allResult.size());
             }
-        }).start();
+        });
+        //Suppose the user knows that it is considered stupid to disallow data saving...
+        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
+        }
+        save.start();
     }
 
 

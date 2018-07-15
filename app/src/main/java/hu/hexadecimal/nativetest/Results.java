@@ -1,6 +1,7 @@
 package hu.hexadecimal.nativetest;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.LinkedList;
 
 public class Results {
@@ -25,9 +26,7 @@ public class Results {
      *                      If bigger than +/- 8, it will be set to 0
      */
     public Results(String name, String parameterUnit, String resultUnitCPP, String resultUnitJava, int decimalOffset) {
-        if (Math.abs(decimalOffset) > 8)
-            decimalOffset = 0;
-        new Results(name, parameterUnit, resultUnitCPP, resultUnitJava, Math.pow(10, decimalOffset));
+        this(name, parameterUnit, resultUnitCPP, resultUnitJava, Math.abs(decimalOffset) > 8 ? 0 : Math.pow(10, decimalOffset));
     }
 
     private Results(String name, String parameterUnit, String resultUnitCPP, String resultUnitJava, double decimalOffset) {
@@ -80,11 +79,11 @@ public class Results {
         builder.append(name);
         builder.append("\n");
         builder.append(paramUnit);
-        builder.append(";");
+        builder.append(",");
         builder.append(resultUnitCPP);
-        builder.append(";");
+        builder.append(",");
         builder.append(resultUnitJava);
-        builder.append(";\n");
+        builder.append(",\n");
         String pattern = "0";
         if (maxDecPlaces > 0) {
             for (double i = 1; i > resultDecimalOffset && pattern.length() - 2 < maxDecPlaces; i /= 10) {
@@ -92,14 +91,16 @@ public class Results {
                 pattern += "0";
             }
         }
-        DecimalFormat dec = new DecimalFormat(pattern);
+        DecimalFormatSymbols sym = new DecimalFormatSymbols();
+        sym.setDecimalSeparator('.');
+        DecimalFormat dec = new DecimalFormat(pattern, sym);
         for (int i = 0; i < parameterList.size(); i++) {
             builder.append(parameterList.get(i));
-            builder.append(";");
+            builder.append(",");
             builder.append(dec.format(resultListCPP.get(i) * resultDecimalOffset));
-            builder.append(";");
+            builder.append(",");
             builder.append(dec.format(resultListJava.get(i) * resultDecimalOffset));
-            builder.append(";\n");
+            builder.append(",\n");
         }
         return builder.toString();
     }
