@@ -13,18 +13,18 @@ As resulting time is heavily affected by other processes and applications in the
 three to five runs, while keeping other applications closed. As some apps do less work without
 an active network connection, keeping the device in airplane mode is advised.
 
-####Aspect 1.
-Calculate how many divisors an arbitrarily long **long** nuumber has.
+#### Aspect 1.
+Calculate how many divisors an arbitrarily long **long** number has.
 
-####Aspect 2.
+#### Aspect 2.
 Generate random integer in an arbitrary range using language built-in methods
 
-####Aspect 3.
+#### Aspect 3.
 Order these arrays using built-in functions.
 Java:   Arrays.sort
 C++:    std::sort (STL)
 
-####Aspect 4.
+#### Aspect 4.
 Find all primes smaller than a given number.
 Do this using an arbitrary number of threads.
 

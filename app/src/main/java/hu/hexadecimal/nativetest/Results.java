@@ -24,7 +24,13 @@ public class Results {
      *                      Use 0 to change nothing
      *                      If bigger than +/- 8, it will be set to 0
      */
-    Results(String name, String parameterUnit, String resultUnitCPP, String resultUnitJava, int decimalOffset) {
+    public Results(String name, String parameterUnit, String resultUnitCPP, String resultUnitJava, int decimalOffset) {
+        if (Math.abs(decimalOffset) > 8)
+            decimalOffset = 0;
+        new Results(name, parameterUnit, resultUnitCPP, resultUnitJava, Math.pow(10, decimalOffset));
+    }
+
+    private Results(String name, String parameterUnit, String resultUnitCPP, String resultUnitJava, double decimalOffset) {
         this.name = name;
         parameterList = new LinkedList<>();
         resultListCPP = new LinkedList<>();
@@ -32,9 +38,7 @@ public class Results {
         paramUnit = parameterUnit;
         this.resultUnitCPP = resultUnitCPP;
         this.resultUnitJava = resultUnitJava;
-        if (Math.abs(decimalOffset) > 8)
-            decimalOffset = 0;
-        resultDecimalOffset = Math.pow(10, decimalOffset);
+        resultDecimalOffset = decimalOffset;
     }
 
     /**
@@ -44,7 +48,7 @@ public class Results {
      * @param resultJava dependent variable (Java)
      * @return number of variable pairs
      */
-    int addTriple(long parameter, long resultCPP, long resultJava) {
+    public int addTriple(long parameter, long resultCPP, long resultJava) {
         parameterList.addLast(parameter);
         resultListCPP.addLast(resultCPP);
         resultListJava.addLast(resultJava);
@@ -54,8 +58,16 @@ public class Results {
     /**
      * @return name of Results
      */
-    String getName() {
+    public String getName() {
         return name;
+    }
+
+    /**
+     * Calculates the number of parameters / independent variables stored
+     * @return
+     */
+    public int getSize() {
+        return parameterList.size();
     }
 
     /**
@@ -90,5 +102,42 @@ public class Results {
             builder.append(";\n");
         }
         return builder.toString();
+    }
+
+    /**
+     * Calculate the average of those results that have the same parameter
+     * in the same order
+     * @param r1 returned Results will inherits its name and units
+     * @param r2
+     * @param weightOnr1 How many times should r1 be taken?
+     * @return null if number of parameters is not equal, else the average
+     */
+    static Results average(Results r1, Results r2, int weightOnr1) {
+        int size = r1.parameterList.size();
+        if (size != r2.parameterList.size()) return null;
+        Results ravg = new Results(r1.name, r1.paramUnit, r1.resultUnitCPP, r1.resultUnitJava, r1.resultDecimalOffset);
+        if (!ravg.name.endsWith("-average"))
+            ravg.name += "-average";
+        for (int i = 0; i < size; i++) {
+            if (r1.parameterList.get(i).equals(r2.parameterList.get(i))) {
+                ravg.parameterList.addLast(r1.parameterList.get(i));
+                ravg.resultListCPP.addLast((r1.resultListCPP.get(i) * weightOnr1 +
+                        r2.resultListCPP.get(i)) / ( 1 + weightOnr1 ));
+                ravg.resultListJava.addLast((r1.resultListJava.get(i) * weightOnr1 +
+                        r2.resultListJava.get(i)) / ( 1 + weightOnr1 ));
+            }
+        }
+        return ravg;
+    }
+
+    /**
+     * Calculate the average of those results that have the same parameter
+     * in the same order, both are of the same weight
+     * @param r1 returned Results will inherits its name and units
+     * @param r2
+     * @return null if number of parameters is not equal, else the average
+     */
+    static Results average(Results r1, Results r2) {
+        return average(r1, r2, 1);
     }
 }
