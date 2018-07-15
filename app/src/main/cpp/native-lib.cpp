@@ -13,7 +13,7 @@
 #define TAG "Java_hu_hexadecimal_nativetest_MainActivity"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 
-void calc(int64_t, int64_t, int64_t*, int64_t*);
+void calc(int32_t, int32_t, int32_t*, int32_t*);
 int64_t pi(int64_t);
 
 int32_t array_size = 8192;
@@ -24,10 +24,10 @@ int number = max + 1;
 
 
 //Variables for primesUntilX
-int64_t * l, *l1, *l2, *l3;
-int64_t pos0,pos1,pos2,pos3 = 0; //uint32_t is not big enough to count all
+int32_t * l, *l1, *l2, *l3;
+int32_t pos0,pos1,pos2,pos3 = 0; //uint32_t is not big enough to count all
 
-void calc(int64_t from, int64_t to, int64_t * pos, int64_t * arr) {
+void calc(int32_t from, int32_t to, int32_t * pos, int32_t * arr) {
     for (; from < to; from++) {
         uint32_t c = sqrt(from);
         //uint32_t should be enough to hold the square root of max_(u)int64_t
@@ -51,13 +51,13 @@ int64_t pi(int64_t x) {
     return (int64_t) ceil(result);
 }
 
-extern "C" JNIEXPORT jlongArray JNICALL Java_hu_hexadecimal_nativetest_MainActivity_primesUntilX(JNIEnv *env, jobject jobj, jlong x)
+extern "C" JNIEXPORT jintArray JNICALL Java_hu_hexadecimal_nativetest_MainActivity_primesUntilX(JNIEnv *env, jobject jobj, jint x)
 {
-    int64_t max = (int64_t) x;
-    l = new int64_t[pi(max)];
-    l1 = new int64_t[pi(max) / 3 * 2];
-    l2 = new int64_t[pi(max) / 3 * 2];
-    l3 = new int64_t[pi(max) / 2];
+    int32_t max = (int32_t) x;
+    l = new int32_t[pi(max)];
+    l1 = new int32_t[pi(max) / 3 * 2];
+    l2 = new int32_t[pi(max) / 3 * 2];
+    l3 = new int32_t[pi(max) / 2];
     std::thread t1(calc, 2, max/4, &pos0, l);
     std::thread t2(calc, max/4, max/2, &pos1, l1);
     std::thread t3(calc, max/2, (max/4)+(max/2), &pos2, l2);
@@ -81,7 +81,7 @@ extern "C" JNIEXPORT jlongArray JNICALL Java_hu_hexadecimal_nativetest_MainActiv
     p += "/primes.txt";
     file.open(p.c_str());
     if (file.is_open()) {
-        file.write((char *) l, pos0 * sizeof (int64_t));
+        file.write((char *) l, pos0 * sizeof (int32_t));
         file.close();
 
         LOGI("File wrote");
@@ -93,17 +93,17 @@ extern "C" JNIEXPORT jlongArray JNICALL Java_hu_hexadecimal_nativetest_MainActiv
         long length = file2.tellg();
         file2.seekg(0);
 
-        int64_t * buffer = new int64_t[length / sizeof (int64_t)];
+        int32_t * buffer = new int32_t[length / sizeof (int32_t)];
         file2.read((char *) buffer, length);
 
-        LOGI("NATIVE - 1.: %lu , last: %lu", buffer[0], buffer[length / sizeof (int64_t) - 1]);
+        LOGI("NATIVE - 1.: %lu , last: %lu", buffer[0], buffer[length / sizeof (int32_t) - 1]);
     }
     */
 
 
-    jlongArray result;
-    result = env->NewLongArray(pos0);
-    env->SetLongArrayRegion(result, 0, pos0, l);
+    jintArray result;
+    result = env->NewIntArray(pos0);
+    env->SetIntArrayRegion(result, 0, pos0, l);
     delete [] l;
     return result;
 }

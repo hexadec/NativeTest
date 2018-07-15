@@ -10,15 +10,10 @@ import android.widget.Toast;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Random;
@@ -42,10 +37,10 @@ public class MainActivity extends Activity {
     int[] array;
 
     /* Arrays for prime numbers */
-    long[] arr0;
-    long[] arr1;
-    long[] arr2;
-    long[] arr3;
+    int[] arr0;
+    int[] arr1;
+    int[] arr2;
+    int[] arr3;
     int pos0, pos1, pos2, pos3 = 0;
 
     /* How many different checks do we want? */
@@ -62,7 +57,7 @@ public class MainActivity extends Activity {
     long div_native_result, div_java_result = 0;
     int random_native_result, random_java_result = 0;
     int array_native_result, array_java_result = 0;
-    long[] prime_native_result;
+    int[] prime_native_result;
     int prime_java_result = 0;
 
     @Override
@@ -71,8 +66,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         //Trying to purge every optimization done on Java code...
-        File homedir = MainActivity.this.getApplicationContext().getDataDir();
-        deleteFolder(homedir);
+        deleteCache();
 
         final TextView divr = findViewById(R.id.div_result);
         final TextView randomr = findViewById(R.id.random_result);
@@ -85,13 +79,13 @@ public class MainActivity extends Activity {
             public void run() {
                 /*Generating number to divide*/
                 int r = new Random().nextInt(100000);
-                final long DIVIDEND = 10000000000L + r;
+                final long DIVIDEND = 1000000000L + r;
                 /*Maximum prime number to find*/
-                final int MAX_PRIME = 50000;
+                final int MAX_PRIME = 20000;
 
                 Results res = new Results("Divisors", "dividend", "ms", "ms", -6);
                 long div_secondary = DIVIDEND;
-                for (int i = 0; i < ITERATIONS; i++) {
+                for (int i = -1; i < ITERATIONS; i++) {
                     Log.i(TAG, "Divisors - Starting up: native");
                     start_time = System.nanoTime();
                     div_native_result = getDivisors(div_secondary);
@@ -104,8 +98,9 @@ public class MainActivity extends Activity {
                     end_time = System.nanoTime();
                     div_java_time = end_time - start_time;
 
-                    res.addTriple(div_secondary, div_native_time, div_java_time);
+                    if (i >= 0) res.addTriple(div_secondary, div_native_time, div_java_time);
                     div_secondary *= 10;
+                    deleteCache();
                 }
                 //TODO run 5 times with different dividend
                 runOnUiThread(new Runnable() {
@@ -120,7 +115,7 @@ public class MainActivity extends Activity {
 
                 res = new Results("Random", "Array-size", "ms", "ms", -6);
                 Results res2 = new Results("Array-order", "Array-size", "ms", "ms", -6);
-                for (int i = 0; i < ITERATIONS; i++) {
+                for (int i = -1; i < ITERATIONS; i++) {
                     Log.d(TAG, "Random - Starting up: native");
                     start_time = System.nanoTime();
                     random_native_result = generateRandom(false, array_size);
@@ -133,7 +128,7 @@ public class MainActivity extends Activity {
                     end_time = System.nanoTime();
                     random_java_time = end_time - start_time;
 
-                    res.addTriple(array_size, random_native_time, random_java_time);
+                    if (i >= 0) res.addTriple(array_size, random_native_time, random_java_time);
 
                     Log.d(TAG, "Arrays - Creating a copy for C++ code of the array");
                     int[] array_native = new int[array_size];
@@ -150,9 +145,10 @@ public class MainActivity extends Activity {
                     end_time = System.nanoTime();
                     array_java_time = end_time - start_time;
 
-                    res2.addTriple(array_size, array_native_time, array_java_time);
+                    if (i >= 0) res2.addTriple(array_size, array_native_time, array_java_time);
 
                     array_size *= 2;
+                    deleteCache();
                 }
                 allResult.add(res);
                 allResult.add(res2);
@@ -176,8 +172,8 @@ public class MainActivity extends Activity {
                 });
 
                 res = new Results("Primes", "Max prime", "ms", "ms", 0);
-                long prime_secondary = MAX_PRIME;
-                for (int i = 0; i < ITERATIONS - 1; i++) {
+                int prime_secondary = MAX_PRIME;
+                for (int i = -1; i < ITERATIONS - 1; i++) {
                     Log.d(TAG, "Primes - Starting up: native");
                     start_time = System.currentTimeMillis();
                     prime_native_result = primesUntilX(prime_secondary);
@@ -200,8 +196,9 @@ public class MainActivity extends Activity {
                             arr0[prime_java_result / 2] + " Max. " +
                             arr0[prime_java_result - 1]);
 
-                    res.addTriple(prime_secondary, prime_native_time, prime_java_time);
+                    if (i >= 0) res.addTriple(prime_secondary, prime_native_time, prime_java_time);
                     prime_secondary *= 5;
+                    deleteCache();
                 }
                 allResult.add(res);
 
@@ -274,17 +271,17 @@ public class MainActivity extends Activity {
         return found;
     }
 
-    public void primesUntilXJava(final long x) {
+    public void primesUntilXJava(final int x) {
         int max = 0;
         if (x <= 100) max = 40;
         else {
             double result = x / (Math.log10(x) - 1) * 1.1;
             max = (int) Math.ceil(result);
         }
-        arr0 = new long[max];
-        arr1 = new long[max / 3 * 2];
-        arr2 = new long[max / 3 * 2];
-        arr3 = new long[max / 2];
+        arr0 = new int[max];
+        arr1 = new int[max / 3 * 2];
+        arr2 = new int[max / 3 * 2];
+        arr3 = new int[max / 2];
         Thread t0 = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -320,10 +317,10 @@ public class MainActivity extends Activity {
         pos0 += pos1 + pos2 + pos3;
     }
 
-    public int calculate(long from, long to, long[] in) {
-        long pos = 0;
+    public int calculate(int from, int to, int[] in) {
+        int pos = 0;
         for (; from < to; from++) {
-            long until = (long) Math.sqrt(from);
+            int until = (int) Math.sqrt(from);
             boolean divs = false;
             for (long i = 2; i <= until; i++) {
                 if (from % i == 0) {
@@ -332,23 +329,29 @@ public class MainActivity extends Activity {
                 }
             }
             if (!divs) {
-                in[(int)pos++] = from;
+                in[pos++] = from;
             }
         }
-        return (int) pos;
+        return pos;
     }
 
     public native long getDivisors(long number);
     public native int generateRandom(boolean which, int size);
     public native int orderArray(int[] array, int size);
-    public native long[] primesUntilX(long x);
+    public native int[] primesUntilX(int x);
 
     @Override
     protected void onDestroy() {
-        File cache = MainActivity.this.getApplicationContext().getCacheDir();
-        deleteFolder(cache);
+        deleteCache();
         System.exit(0);
         super.onDestroy();
+    }
+
+    private void deleteCache() {
+        File cache = MainActivity.this.getApplicationContext().getCacheDir();
+        File ccache = MainActivity.this.getApplicationContext().getCodeCacheDir();
+        deleteFolder(cache);
+        deleteFolder(ccache);
     }
 
     private void deleteFolder(File folder) {
@@ -363,8 +366,7 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        File cache = MainActivity.this.getApplicationContext().getCacheDir();
-        deleteFolder(cache);
+        deleteCache();
         System.exit(0);
         super.onBackPressed();
     }
