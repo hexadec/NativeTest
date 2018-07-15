@@ -52,10 +52,18 @@ public class Results {
     }
 
     /**
+     * @return name of Results
+     */
+    String getName() {
+        return name;
+    }
+
+    /**
      * Convert class to CSV format
+     * @param maxDecPlaces maximum decimal places
      * @return parameter - result pairs in CSV format, results are modified according to decimalOffset
      */
-    public String toCSV() {
+    public String toCSV(int maxDecPlaces) {
         StringBuilder builder = new StringBuilder();
         builder.append(name);
         builder.append("\n");
@@ -66,17 +74,19 @@ public class Results {
         builder.append(resultUnitJava);
         builder.append(";\n");
         String pattern = "0";
-        for (int i = 1; i > resultDecimalOffset; i /= 10) {
-            if (i == 1) pattern += ".";
-            pattern += "0";
+        if (maxDecPlaces > 0) {
+            for (double i = 1; i > resultDecimalOffset && pattern.length() - 2 < maxDecPlaces; i /= 10) {
+                if (i == 1) pattern += ".";
+                pattern += "0";
+            }
         }
         DecimalFormat dec = new DecimalFormat(pattern);
         for (int i = 0; i < parameterList.size(); i++) {
-            builder.append(parameterList.get(0));
+            builder.append(parameterList.get(i));
             builder.append(";");
-            builder.append(dec.format(resultListCPP.get(0) * resultDecimalOffset));
+            builder.append(dec.format(resultListCPP.get(i) * resultDecimalOffset));
             builder.append(";");
-            builder.append(dec.format(resultListJava.get(0) * resultDecimalOffset));
+            builder.append(dec.format(resultListJava.get(i) * resultDecimalOffset));
             builder.append(";\n");
         }
         return builder.toString();

@@ -16,10 +16,10 @@
 void calc(int64_t, int64_t, int64_t*, int64_t*);
 int64_t pi(int64_t);
 
-const int array_size = 32768;
+int32_t array_size = 8192;
 const int pos = 2040;
 const int min = 100;
-const int max = 25000;
+const int max = 2048*2048;
 int number = max + 1;
 
 
@@ -127,10 +127,11 @@ extern "C" JNIEXPORT jlong JNICALL Java_hu_hexadecimal_nativetest_MainActivity_g
     return divs*2;
 }
 
-extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_generateRandom(JNIEnv *env, jobject jobj, jboolean which)
+extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_generateRandom(JNIEnv *env, jobject jobj, jboolean which, jint size)
 {
     if (which)
         number = min - 1;
+    array_size = (int32_t) size;
     std::random_device rd;
     std::mt19937 generator(rd());
     std::uniform_int_distribution<int> uni(min, max);
@@ -142,10 +143,11 @@ extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_ge
 
 }
 
-extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_orderArray(JNIEnv *env, jobject jobj, jintArray jarray)
+extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_orderArray(JNIEnv *env, jobject jobj, jintArray jarray, jint size)
 {
     jint * array = env->GetIntArrayElements(jarray, 0);
 
+    array_size = (int32_t) size;
     std::sort(array, array + array_size);
     int found = -1;
     for (int i = 0; i < array_size; i++) {
