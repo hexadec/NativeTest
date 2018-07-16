@@ -21,6 +21,7 @@ const int pos = 2040;
 const int min = 100;
 const int max = 2048*2048;
 int number = max + 1;
+int32_t pmax = 0;
 
 
 //Variables for primesUntilX
@@ -29,8 +30,7 @@ int32_t pos0,pos1,pos2,pos3 = 0; //uint32_t is not big enough to count all
 
 void calc(int32_t from, int32_t to, int32_t * pos, int32_t * arr) {
     for (; from < to; from++) {
-        uint32_t c = sqrt(from);
-        //uint32_t should be enough to hold the square root of max_(u)int64_t
+        int32_t c = sqrt(from);
         bool div = false;
         for (uint32_t t = 2; t <= c; t++) {
             if (from%t==0) {
@@ -53,16 +53,17 @@ int64_t pi(int64_t x) {
 
 extern "C" JNIEXPORT jintArray JNICALL Java_hu_hexadecimal_nativetest_MainActivity_primesUntilX(JNIEnv *env, jobject jobj, jint x)
 {
-    int32_t max = (int32_t) x;
-    l = new int32_t[pi(max)];
-    l1 = new int32_t[pi(max) / 3 * 2];
-    l2 = new int32_t[pi(max) / 3 * 2];
-    l3 = new int32_t[pi(max) / 2];
-    std::thread t1(calc, 2, max/4, &pos0, l);
-    std::thread t2(calc, max/4, max/2, &pos1, l1);
-    std::thread t3(calc, max/2, (max/4)+(max/2), &pos2, l2);
+    pmax = (int32_t) x;
+    pos0 = pos1 = pos2 = pos3 = 0;
+    l = new int32_t[pi(pmax)];
+    l1 = new int32_t[pi(pmax) / 3 * 2];
+    l2 = new int32_t[pi(pmax) / 3 * 2];
+    l3 = new int32_t[pi(pmax) / 2];
+    std::thread t1(calc, 2, pmax/4, &pos0, l);
+    std::thread t2(calc, pmax/4, pmax/2, &pos1, l1);
+    std::thread t3(calc, pmax/2, (pmax/4)+(pmax/2), &pos2, l2);
     //calc4
-    calc((max/4)+(max/2), max, &pos3, l3);
+    calc((pmax/4)+(pmax/2), pmax, &pos3, l3);
     t1.join();
     t2.join();
     t3.join();
@@ -75,31 +76,6 @@ extern "C" JNIEXPORT jintArray JNICALL Java_hu_hexadecimal_nativetest_MainActivi
     delete [] l1;
     delete [] l2;
     delete [] l3;
-
-    /*std::ofstream file;
-    std::string p = getenv("EXTERNAL_STORAGE"); //"/storage/emulated/0";
-    p += "/primes.txt";
-    file.open(p.c_str());
-    if (file.is_open()) {
-        file.write((char *) l, pos0 * sizeof (int32_t));
-        file.close();
-
-        LOGI("File wrote");
-    }
-    std::ifstream file2;
-    file2.open(p.c_str());
-    if (file2.is_open()) {
-        file2.seekg(0, file2.end);
-        long length = file2.tellg();
-        file2.seekg(0);
-
-        int32_t * buffer = new int32_t[length / sizeof (int32_t)];
-        file2.read((char *) buffer, length);
-
-        LOGI("NATIVE - 1.: %lu , last: %lu", buffer[0], buffer[length / sizeof (int32_t) - 1]);
-    }
-    */
-
 
     jintArray result;
     result = env->NewIntArray(pos0);
