@@ -32,7 +32,7 @@ void calc(int32_t from, int32_t to, int32_t * pos, int32_t * arr) {
     for (; from < to; from++) {
         int32_t c = sqrt(from);
         bool div = false;
-        for (uint32_t t = 2; t <= c; t++) {
+        for (int32_t t = 2; t <= c; t++) {
             if (from%t==0) {
                 div = true;
                 break;
@@ -109,7 +109,8 @@ extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_ge
         number = min - 1;
     array_size = (int32_t) size;
     std::random_device rd;
-    std::mt19937 generator(rd());
+    //Use linear congruency generator, as Java does
+    std::minstd_rand generator(rd());
     std::uniform_int_distribution<int> uni(min, max);
     int * array = new int[array_size];
     for (int i = 0; i < array_size; i++)

@@ -108,10 +108,10 @@ public class Results {
     /**
      * Calculate the average of those results that have the same parameter
      * in the same order
-     * @param r1 returned Results will inherits its name and units
+     * @param r1 returned Results will inherit its name and units
      * @param r2
      * @param weightOnr1 How many times should r1 be taken?
-     * @return null if number of parameters is not equal, else the average
+     * @return null if number of parameters is not equal, else the weighted average
      */
     static Results average(Results r1, Results r2, int weightOnr1) {
         int size = r1.parameterList.size();
@@ -134,7 +134,7 @@ public class Results {
     /**
      * Calculate the average of those results that have the same parameter
      * in the same order, both are of the same weight
-     * @param r1 returned Results will inherits its name and units
+     * @param r1 returned Results will inherit its name and units
      * @param r2
      * @return null if number of parameters is not equal, else the average
      */

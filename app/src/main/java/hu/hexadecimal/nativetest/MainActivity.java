@@ -98,7 +98,6 @@ public class MainActivity extends Activity {
         //-1 is not necessary as ITERATIONS start from -1!
         array = new int[( array_size * ((int)Math.pow(2, ITERATIONS)))];
         array_native = new int[array.length];
-        Log.e(TAG, "-----------"+ array_size);
         //Not using UI thread w/ long operations to avoid being killed
         allResult = new LinkedList<>();
         final Thread runMore = new Thread(new Runnable() {
@@ -113,9 +112,15 @@ public class MainActivity extends Activity {
                             array_size /= Math.pow(2, ITERATIONS + 1);
                         }
                         CURRENT_RUN_ID = i;
+                        Log.w(TAG, "------------ RUN TIMES --------: " + i);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(MainActivity.this, "Run times:\t" + CURRENT_RUN_ID, Toast.LENGTH_SHORT).show();
+                            }
+                        });
                         t = new Thread(toRun);
                         t.start();
-                        Log.w(TAG, "--------------- RUN TIMES --------: " + i);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                         Log.e(TAG, "Fail in runMore");
@@ -209,7 +214,7 @@ public class MainActivity extends Activity {
     }
 
     public void primesUntilXJava(final int x) {
-        int max = 0;
+        int max;
         if (x <= 100) max = 40;
         else {
             double result = x / (Math.log10(x) - 1) * 1.1;
@@ -370,7 +375,6 @@ public class MainActivity extends Activity {
                 if (i >= 0) res.addTriple(array_size, random_native_time, random_java_time);
 
                 Log.d(TAG, "Arrays - Creating a copy for C++ code of the array");
-                //int[] array_native = new int[array_size];
                 System.arraycopy(array, 0, array_native, 0, array_size);
                 Log.d(TAG, "Arrays - Starting up: native");
                 start_time = System.nanoTime();
@@ -387,7 +391,6 @@ public class MainActivity extends Activity {
                 if (i >= 0) res2.addTriple(array_size, array_native_time, array_java_time);
 
                 array_size *= 2;
-                //array = null;
                 deleteCache();
             }
             if (CURRENT_RUN_ID == 0) {
