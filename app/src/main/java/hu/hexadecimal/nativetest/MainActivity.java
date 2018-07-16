@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
     static final int ITERATIONS = 5;
 
     /* How many times run each test */
-    static final int RUNS = 4;
+    static final int RUNS = 6;
     int CURRENT_RUN_ID = 0;
 
     /* How many experiments do we have? */
