@@ -2,6 +2,8 @@ package hu.hexadecimal.nativetest;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -78,6 +80,7 @@ public class MainActivity extends Activity {
     TextView divr, randomr, arrayr, primer;
     LinkedList<Results> allResult;
     Thread t;
+    boolean save_failbit = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +98,7 @@ public class MainActivity extends Activity {
         randomr = findViewById(R.id.random_result);
         arrayr = findViewById(R.id.array_result);
         primer = findViewById(R.id.prime_result);
+        final TextView runcounter = findViewById(R.id.runCounter);
         //-1 is not necessary as ITERATIONS start from -1!
         array = new int[( array_size * ((int)Math.pow(2, ITERATIONS)))];
         array_native = new int[array.length];
@@ -116,7 +120,7 @@ public class MainActivity extends Activity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                Toast.makeText(MainActivity.this, "Run times:\t" + CURRENT_RUN_ID, Toast.LENGTH_SHORT).show();
+                                runcounter.setText("Current run:\t" + (CURRENT_RUN_ID + 1) + "/" + RUNS);
                             }
                         });
                         t = new Thread(toRun);
@@ -136,11 +140,16 @@ public class MainActivity extends Activity {
                         Log.e(TAG, "Fail in runMore - illegal thread state...");
                     }
                 }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        runcounter.setText("DONE!");
+                    }
+                });
             }
         });
-        runMore.start();
 
-        Thread save = new Thread(new Runnable() {
+        final Thread save = new Thread(new Runnable() {
             @Override
             public void run() {
                 SystemClock.sleep(5000);
@@ -165,20 +174,49 @@ public class MainActivity extends Activity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                Toast.makeText(MainActivity.this,
-                                        "Cannot save files, please enable Storage permission in settings", Toast.LENGTH_LONG).show();
+                                runcounter.setText("Cannot save files, please enable Storage permission in settings");
+                                save_failbit = true;
                             }
                         });
+                        break;
                     }
+                }
+                if (!save_failbit) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            runcounter.setText(runcounter.getText() + "\nFiles saved (" + allResult.size() + ")");
+                        }
+                    });
                 }
                 Log.w(TAG, "Files written: " + allResult.size());
             }
         });
-        //Suppose the user knows that it is considered stupid to disallow data saving...
-        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
-            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
-        }
-        save.start();
+        AlertDialog.Builder adb = new AlertDialog.Builder(MainActivity.this);
+        adb.setIcon(android.R.drawable.ic_dialog_alert)
+                .setTitle("NativeTest informations")
+                .setMessage(Html.fromHtml("The app will run the tests <b><u>" + RUNS +
+                        "</b></u> times, and the average of these will be saved to the corresponding files. " +
+                        "The files will be found in the root of the default storage."))
+                .setPositiveButton("Start now", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //Suppose the user knows that it is considered stupid to disallow data saving...
+                        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+                            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
+                        }
+                        runMore.start();
+                        save.start();
+                    }
+                })
+                .setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                })
+                .setCancelable(false)
+                .show();
     }
 
 
