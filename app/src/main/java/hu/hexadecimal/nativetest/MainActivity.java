@@ -11,6 +11,8 @@ import android.os.Environment;
 import android.os.SystemClock;
 import android.text.Html;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -54,7 +56,7 @@ public class MainActivity extends Activity {
     static final int ITERATIONS = 5;
 
     /* How many times run each test */
-    static final int RUNS = 6;
+    int RUNS = 5; //can be changed through dialog!
     int CURRENT_RUN_ID = 0;
 
     /* How many experiments do we have? */
@@ -81,6 +83,13 @@ public class MainActivity extends Activity {
     LinkedList<Results> allResult;
     Thread t;
     boolean save_failbit = false;
+
+    final String message = "The app will run the tests <b><u>%d" +
+            "</b></u> times, and the average of these will be saved to the corresponding files. " +
+            "The files will be found in the root of the default storage.";
+
+    final int CORES = Runtime.getRuntime().availableProcessors();
+    final int MINUS_ITERATIONS = CORES / 4 == 0 ? 2 : 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -152,6 +161,7 @@ public class MainActivity extends Activity {
         final Thread save = new Thread(new Runnable() {
             @Override
             public void run() {
+                //Wait a bit, just in case the user hasn't yet allowed saving and tests are done
                 SystemClock.sleep(5000);
                 try {
                     runMore.join();
@@ -163,6 +173,7 @@ public class MainActivity extends Activity {
                     return;
                 }
                 for(Results r : allResult) {
+                    //No check for whether this storage is available!
                     File f = new File(Environment.getExternalStorageDirectory() + "/Results-" + r.getName() + ".csv");
                     try (Writer writer = new BufferedWriter(new OutputStreamWriter(
                             new FileOutputStream(f), "UTF-8"))) {
@@ -178,6 +189,7 @@ public class MainActivity extends Activity {
                                 save_failbit = true;
                             }
                         });
+                        //Pointless to continue loop
                         break;
                     }
                 }
@@ -192,12 +204,11 @@ public class MainActivity extends Activity {
                 Log.w(TAG, "Files written: " + allResult.size());
             }
         });
+        //Show this on every startup allowing customizations and info
         AlertDialog.Builder adb = new AlertDialog.Builder(MainActivity.this);
         adb.setIcon(android.R.drawable.ic_dialog_alert)
                 .setTitle("NativeTest informations")
-                .setMessage(Html.fromHtml("The app will run the tests <b><u>" + RUNS +
-                        "</b></u> times, and the average of these will be saved to the corresponding files. " +
-                        "The files will be found in the root of the default storage."))
+                .setMessage(Html.fromHtml(String.format(message, RUNS)))
                 .setPositiveButton("Start now", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -212,11 +223,27 @@ public class MainActivity extends Activity {
                 .setNegativeButton("Exit", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        deleteCache();
                         finish();
                     }
                 })
-                .setCancelable(false)
-                .show();
+                .setNeutralButton("+1 run", null)
+                .setCancelable(false);
+        final AlertDialog d = adb.create();
+        //This way the dialog wont close after one click on +1
+        d.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialog) {
+                Button incr = d.getButton(AlertDialog.BUTTON_NEUTRAL);
+                incr.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        d.setMessage(Html.fromHtml(String.format(message, ++RUNS)));
+                    }
+                });
+            }
+        });
+        d.show();
     }
 
 
@@ -316,42 +343,6 @@ public class MainActivity extends Activity {
             }
         }
         return pos;
-    }
-
-    public native long getDivisors(long number);
-    public native int generateRandom(boolean which, int size);
-    public native int orderArray(int[] array, int size);
-    public native int[] primesUntilX(int x);
-
-    @Override
-    protected void onDestroy() {
-        deleteCache();
-        System.exit(0);
-        super.onDestroy();
-    }
-
-    private void deleteCache() {
-        File cache = MainActivity.this.getApplicationContext().getCacheDir();
-        File ccache = MainActivity.this.getApplicationContext().getCodeCacheDir();
-        deleteFolder(cache);
-        deleteFolder(ccache);
-    }
-
-    private void deleteFolder(File folder) {
-        if (folder.isDirectory()) {
-            for (File sub : folder.listFiles()) {
-                deleteFolder(sub);
-            }
-        }
-
-    }
-
-
-    @Override
-    public void onBackPressed() {
-        deleteCache();
-        System.exit(0);
-        super.onBackPressed();
     }
 
     private final Runnable toRun = new Runnable() {
@@ -466,7 +457,8 @@ public class MainActivity extends Activity {
 
             res = new Results("Primes", "Max prime", "ms", "ms", 0);
             int prime_secondary = MAX_PRIME;
-            for (int i = -1; i < ITERATIONS - 1; i++) {
+            //Prime finding is a very long algorithm, ITERATIONS -1 can up to 5 min on a double-core device
+            for (int i = -1; i < ITERATIONS - MINUS_ITERATIONS; i++) {
                 Log.d(TAG, "Primes - Starting up: native");
                 start_time = System.currentTimeMillis();
                 prime_native_result = primesUntilX(prime_secondary);
@@ -511,4 +503,39 @@ public class MainActivity extends Activity {
             });
         }
     };
+
+    public native long getDivisors(long number);
+    public native int generateRandom(boolean which, int size);
+    public native int orderArray(int[] array, int size);
+    public native int[] primesUntilX(int x);
+
+    @Override
+    protected void onDestroy() {
+        deleteCache();
+        System.exit(0);
+        super.onDestroy();
+    }
+
+    private void deleteCache() {
+        File cache = MainActivity.this.getApplicationContext().getCacheDir();
+        File ccache = MainActivity.this.getApplicationContext().getCodeCacheDir();
+        deleteFolder(cache);
+        deleteFolder(ccache);
+    }
+
+    private void deleteFolder(File folder) {
+        if (folder.isDirectory()) {
+            for (File sub : folder.listFiles()) {
+                deleteFolder(sub);
+            }
+        }
+
+    }
+
+    @Override
+    public void onBackPressed() {
+        deleteCache();
+        System.exit(0);
+        super.onBackPressed();
+    }
 }
