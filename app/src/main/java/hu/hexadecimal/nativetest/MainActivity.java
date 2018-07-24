@@ -91,6 +91,7 @@ public class MainActivity extends Activity {
             "</b></u> times, and the average of these will be saved to the corresponding files. " +
             "The files will be found in the root of the default storage.";
 
+    //Devices with less than 4 cores will take too long time finding huge prime numbers
     final int CORES = Runtime.getRuntime().availableProcessors();
     final int MINUS_ITERATIONS = CORES / 4 == 0 ? -3 : -5;
 
@@ -99,7 +100,10 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Trying to purge every optimization done on Java code...
+        /* Trying to purge every optimization done on Java code
+           that occurred due to running the same code with the same
+           numbers multiple times...
+         */
         deleteCache();
 
         /*Generating number to divide*/
@@ -114,8 +118,9 @@ public class MainActivity extends Activity {
         //-1 is not necessary as ITERATIONS start from -1!
         array = new int[(array_size * ((int) Math.pow(ARRAY_SIZE_MULTIPLIER, ITERATIONS * 2 + 0.5)))];
         array_native = new int[array.length];
-        //Not using UI thread w/ long operations to avoid being killed
+        //Container for individual Results class
         allResult = new LinkedList<>();
+        //Not using UI thread w/ long operations to avoid being killed
         final Thread runMore = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -124,7 +129,6 @@ public class MainActivity extends Activity {
                         if (t != null && t.isAlive()) {
                             t.join();
                             //Restore array size to original
-                            // +1 since there is a *2 at the end of each run (even the last)
                             array_size = INITIAL_ARRAY_SIZE;
                         }
                         CURRENT_RUN_ID = i;
@@ -353,6 +357,7 @@ public class MainActivity extends Activity {
 
             Results res = new Results("Divisors", "dividend", "ms", "ms", -6);
             long div_secondary = DIVIDEND;
+            //Each test has its own id in increasing order
             int experiment_id = 0;
             for (int i = -1; i < ITERATIONS * 2; i++) {
                 Log.d(TAG, "Divisors - Starting up: native");
@@ -371,7 +376,7 @@ public class MainActivity extends Activity {
                 div_secondary *= 3;
                 deleteCache();
             }
-            //TODO run 5 times with different dividend
+            //Use UI/Main Thread to do work on UI elements
             runOnUiThread(new Runnable() {
 
                 @Override
@@ -383,6 +388,7 @@ public class MainActivity extends Activity {
             if (CURRENT_RUN_ID == 0) {
                 allResult.addLast(res);
             } else {
+                //Calculate the average of all previous runs and this, previous ones need to have weight #avg
                 res = Results.average(allResult.get(experiment_id), res, 1 + CURRENT_RUN_ID);
                 allResult.remove(experiment_id);
                 allResult.add(experiment_id++, res);
@@ -428,6 +434,7 @@ public class MainActivity extends Activity {
             if (CURRENT_RUN_ID == 0) {
                 allResult.addLast(res);
             } else {
+                //Same as before... (#avg)
                 res = Results.average(allResult.get(experiment_id), res, 1 + CURRENT_RUN_ID);
                 allResult.remove(experiment_id);
                 allResult.add(experiment_id++, res);
@@ -435,6 +442,7 @@ public class MainActivity extends Activity {
             if (CURRENT_RUN_ID == 0) {
                 allResult.addLast(res2);
             } else {
+                //Same as before... (#avg)
                 res2 = Results.average(allResult.get(experiment_id), res2, 1 + CURRENT_RUN_ID);
                 allResult.remove(experiment_id);
                 allResult.add(experiment_id++, res2);
@@ -491,6 +499,7 @@ public class MainActivity extends Activity {
             if (CURRENT_RUN_ID == 0) {
                 allResult.addLast(res);
             } else {
+                //Same as before... (#avg)
                 res = Results.average(allResult.get(experiment_id), res, 1 + CURRENT_RUN_ID);
                 allResult.remove(experiment_id);
                 allResult.add(experiment_id++, res);

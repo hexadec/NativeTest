@@ -8,6 +8,8 @@ This program is necessary to supply data for my EE.
 
 > To provide a different kind of test environment, comment out usages of deleteCache()
 
+> Please keep in mind that is project is intended for comparing the two languages rather than benchmarking devices!
+
 This application neglects the result of the first runs of each type of test, but it may be completely unnecessary.
 As resulting time is heavily affected by other processes and applications in the background, you may want to calculate an average of 
 three to five runs, while keeping other applications closed. As some apps do less work without
