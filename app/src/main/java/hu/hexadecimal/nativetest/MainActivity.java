@@ -24,6 +24,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.Random;
 import java.lang.Math;
 
@@ -40,7 +41,7 @@ public class MainActivity extends Activity {
     int array_size = 8192;
     final int pos = 2040;
     final int min = 100;
-    final int max = 2048*2048;
+    final int max = 2048 * 2048;
     int number = max + 1;
     int[] array;
     int[] array_native;
@@ -89,7 +90,7 @@ public class MainActivity extends Activity {
             "The files will be found in the root of the default storage.";
 
     final int CORES = Runtime.getRuntime().availableProcessors();
-    final int MINUS_ITERATIONS = CORES / 4 == 0 ? 2 : 1;
+    final int MINUS_ITERATIONS = CORES / 4 == 0 ? -3 : -5;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,7 +110,7 @@ public class MainActivity extends Activity {
         primer = findViewById(R.id.prime_result);
         final TextView runcounter = findViewById(R.id.runCounter);
         //-1 is not necessary as ITERATIONS start from -1!
-        array = new int[( array_size * ((int)Math.pow(2, ITERATIONS)))];
+        array = new int[(array_size * ((int) Math.pow(2, ITERATIONS)))];
         array_native = new int[array.length];
         //Not using UI thread w/ long operations to avoid being killed
         allResult = new LinkedList<>();
@@ -172,7 +173,7 @@ public class MainActivity extends Activity {
                     Log.e(TAG, "There is an incorrect number of EXPERIMENTS!");
                     return;
                 }
-                for(Results r : allResult) {
+                for (Results r : allResult) {
                     //No check for whether this storage is available!
                     File f = new File(Environment.getExternalStorageDirectory() + "/Results-" + r.getName() + ".csv");
                     try (Writer writer = new BufferedWriter(new OutputStreamWriter(
@@ -208,7 +209,7 @@ public class MainActivity extends Activity {
         AlertDialog.Builder adb = new AlertDialog.Builder(MainActivity.this);
         adb.setIcon(android.R.drawable.ic_dialog_alert)
                 .setTitle("NativeTest informations")
-                .setMessage(Html.fromHtml(String.format(message, RUNS)))
+                .setMessage(Html.fromHtml(String.format(Locale.ENGLISH, message, RUNS)))
                 .setPositiveButton("Start now", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -238,7 +239,7 @@ public class MainActivity extends Activity {
                 incr.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        d.setMessage(Html.fromHtml(String.format(message, ++RUNS)));
+                        d.setMessage(Html.fromHtml(String.format(Locale.ENGLISH, message, ++RUNS)));
                     }
                 });
             }
@@ -250,10 +251,10 @@ public class MainActivity extends Activity {
     public long divisorsJava(long random) {
         long divs = 1;
         long upper_limit = (long) Math.sqrt(random);
-        for (long c = 2; c <= upper_limit; c++) {
-            if (random % c == 0) divs++;
+        for (long c = 2; c <= upper_limit; ++c) {
+            if (random % c == 0) ++divs;
         }
-        return divs*2;
+        return divs * 2;
     }
 
     public int generateRandomJava(boolean which, int size) {
@@ -261,7 +262,7 @@ public class MainActivity extends Activity {
             number = min - 1;
         Random r = new Random();
         for (int i = 0; i < size; i++)
-            array[i] = r.nextInt(max-min)+min;
+            array[i] = r.nextInt(max - min) + min;
         return (array[pos] = max + 1);
     }
 
@@ -310,7 +311,7 @@ public class MainActivity extends Activity {
         t0.start();
         t1.start();
         t2.start();
-        pos3 = calculate(x/ 4 * 3, x, arr3);
+        pos3 = calculate(x / 4 * 3, x, arr3);
         try {
             t0.join();
             t1.join();
@@ -319,7 +320,7 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
         System.arraycopy(arr1, 0, arr0, pos0, pos1);
-        arr1 = null;
+        arr1 = null; //Help GC a bit, it seems it needs our help sometimes
         System.arraycopy(arr2, 0, arr0, pos0 + pos1, pos2);
         arr2 = null;
         System.arraycopy(arr3, 0, arr0, pos0 + pos1 + pos2, pos3);
@@ -331,14 +332,13 @@ public class MainActivity extends Activity {
         int pos = 0;
         for (; from < to; from++) {
             int until = (int) Math.sqrt(from);
-            boolean divs = false;
-            for (long i = 2; i <= until; i++) {
+            long i = 2;
+            for (; i <= until; ++i) {
                 if (from % i == 0) {
-                    divs = true;
                     break;
                 }
             }
-            if (!divs) {
+            if (i > until) {
                 in[pos++] = from;
             }
         }
@@ -352,7 +352,7 @@ public class MainActivity extends Activity {
             Results res = new Results("Divisors", "dividend", "ms", "ms", -6);
             long div_secondary = DIVIDEND;
             int experiment_id = 0;
-            for (int i = -1; i < ITERATIONS; i++) {
+            for (int i = -1; i < ITERATIONS + 1; i++) {
                 Log.d(TAG, "Divisors - Starting up: native");
                 start_time = System.nanoTime();
                 div_native_result = getDivisors(div_secondary);
@@ -374,7 +374,7 @@ public class MainActivity extends Activity {
 
                 @Override
                 public void run() {
-                    divr.setText(Html.fromHtml("<b>Divisors </b>(" + DIVIDEND +")<br/>Native: " + String.format("%.1f", div_native_time / 1000000.0) + " ms\nJava: " + String.format("%.1f", div_java_time / 1000000.0) + " ms"));
+                    divr.setText(Html.fromHtml("<b>Divisors </b>(" + DIVIDEND + ")<br/>Native: " + String.format(Locale.ENGLISH, "%.1f", div_native_time / 1000000.0) + " ms\nJava: " + String.format(Locale.ENGLISH, "%.1f", div_java_time / 1000000.0) + " ms"));
                     Toast.makeText(MainActivity.this, div_native_result + "/" + div_java_result, Toast.LENGTH_SHORT).show();
                 }
             });
@@ -441,7 +441,7 @@ public class MainActivity extends Activity {
 
                 @Override
                 public void run() {
-                    randomr.setText(Html.fromHtml("<b>Random integer generation: </b>(" + array_size + ")<br/>Native: " + String.format("%.1f", random_native_time / 1000000.0) + " ms\nJava: " + String.format("%.1f", random_java_time / 1000000.0)  + " ms"));
+                    randomr.setText(Html.fromHtml("<b>Random integer generation: </b>(" + array_size / 2 + ")<br/>Native: " + String.format(Locale.ENGLISH, "%.1f", random_native_time / 1000000.0) + " ms\nJava: " + String.format(Locale.ENGLISH, "%.1f", random_java_time / 1000000.0) + " ms"));
                     Toast.makeText(MainActivity.this, random_native_result + "/" + random_java_result, Toast.LENGTH_SHORT).show();
                 }
             });
@@ -450,7 +450,7 @@ public class MainActivity extends Activity {
 
                 @Override
                 public void run() {
-                    arrayr.setText(Html.fromHtml("<b>Arrays order: </b>(" + array_size + ")<br/>Native: " + String.format("%.1f", array_native_time / 1000000.0) + " ms\nJava: " + String.format("%.1f", array_java_time / 1000000.0) + " ms"));
+                    arrayr.setText(Html.fromHtml("<b>Arrays order: </b>(" + array_size / 2 + ")<br/>Native: " + String.format(Locale.ENGLISH, "%.1f", array_native_time / 1000000.0) + " ms\nJava: " + String.format(Locale.ENGLISH, "%.1f", array_java_time / 1000000.0) + " ms"));
                     Toast.makeText(MainActivity.this, array_native_result + "/" + array_java_result, Toast.LENGTH_SHORT).show();
                 }
             });
@@ -482,7 +482,7 @@ public class MainActivity extends Activity {
                         arr0[prime_java_result - 1]);
 
                 if (i >= 0) res.addTriple(prime_secondary, prime_native_time, prime_java_time);
-                prime_secondary *= 5;
+                prime_secondary *= 2;
                 deleteCache();
             }
             if (CURRENT_RUN_ID == 0) {
@@ -505,8 +505,11 @@ public class MainActivity extends Activity {
     };
 
     public native long getDivisors(long number);
+
     public native int generateRandom(boolean which, int size);
+
     public native int orderArray(int[] array, int size);
+
     public native int[] primesUntilX(int x);
 
     @Override

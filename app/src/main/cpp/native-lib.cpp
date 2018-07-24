@@ -26,19 +26,18 @@ int32_t pmax = 0;
 
 //Variables for primesUntilX
 int32_t * l, *l1, *l2, *l3;
-int32_t pos0,pos1,pos2,pos3 = 0; //uint32_t is not big enough to count all
+int32_t pos0,pos1,pos2,pos3 = 0;
 
 void calc(int32_t from, int32_t to, int32_t * pos, int32_t * arr) {
     for (; from < to; from++) {
         int32_t c = sqrt(from);
-        bool div = false;
-        for (int32_t t = 2; t <= c; t++) {
+        int32_t t = 2;
+        for (; t <= c; ++t) {
             if (from%t==0) {
-                div = true;
                 break;
             }
         }
-        if (!div) {
+        if (t > c) {
             arr[(*pos)++] = from;
         }
     }
@@ -96,10 +95,9 @@ extern "C" JNIEXPORT jlong JNICALL Java_hu_hexadecimal_nativetest_MainActivity_g
     int64_t divs = 1;
     int64_t num2 = (int64_t) number;
     uint32_t upper_limit = (uint32_t) sqrt(num2);
-    for (uint32_t i = 2; i <= upper_limit; i++) {
-        if (num2%i==0) divs++;
+    for (uint32_t i = 2; i <= upper_limit; ++i) {
+        if (num2%i==0) ++divs;
     }
-    LOGI("NATIVE - divs: %lu , number: %lu", divs, number);
     return divs*2;
 }
 

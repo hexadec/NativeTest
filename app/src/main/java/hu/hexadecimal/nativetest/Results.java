@@ -84,16 +84,16 @@ public class Results {
         builder.append(",");
         builder.append(resultUnitJava);
         builder.append(",\n");
-        String pattern = "0";
+        StringBuilder pattern = new StringBuilder("0");
         if (maxDecPlaces > 0) {
             for (double i = 1; i > resultDecimalOffset && pattern.length() - 2 < maxDecPlaces; i /= 10) {
-                if (i == 1) pattern += ".";
-                pattern += "0";
+                if (i == 1) pattern.append(".");
+                pattern.append("0");
             }
         }
         DecimalFormatSymbols sym = new DecimalFormatSymbols();
         sym.setDecimalSeparator('.');
-        DecimalFormat dec = new DecimalFormat(pattern, sym);
+        DecimalFormat dec = new DecimalFormat(pattern.toString(), sym);
         for (int i = 0; i < parameterList.size(); i++) {
             builder.append(parameterList.get(i));
             builder.append(",");
