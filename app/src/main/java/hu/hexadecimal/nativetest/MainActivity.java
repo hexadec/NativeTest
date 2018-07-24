@@ -38,7 +38,9 @@ public class MainActivity extends Activity {
     public static String TAG = "NativeTest";
 
     /* Constants for arrays and random numbers */
-    int array_size = 8192;
+    static final int INITIAL_ARRAY_SIZE = 8192;
+    static final double ARRAY_SIZE_MULTIPLIER = 1.414; //sqrt(2)
+    int array_size = INITIAL_ARRAY_SIZE;
     final int pos = 2040;
     final int min = 100;
     final int max = 2048 * 2048;
@@ -110,7 +112,7 @@ public class MainActivity extends Activity {
         primer = findViewById(R.id.prime_result);
         final TextView runcounter = findViewById(R.id.runCounter);
         //-1 is not necessary as ITERATIONS start from -1!
-        array = new int[(array_size * ((int) Math.pow(2, ITERATIONS)))];
+        array = new int[(array_size * ((int) Math.pow(ARRAY_SIZE_MULTIPLIER, ITERATIONS * 2 + 0.5)))];
         array_native = new int[array.length];
         //Not using UI thread w/ long operations to avoid being killed
         allResult = new LinkedList<>();
@@ -123,7 +125,7 @@ public class MainActivity extends Activity {
                             t.join();
                             //Restore array size to original
                             // +1 since there is a *2 at the end of each run (even the last)
-                            array_size /= Math.pow(2, ITERATIONS + 1);
+                            array_size = INITIAL_ARRAY_SIZE;
                         }
                         CURRENT_RUN_ID = i;
                         Log.w(TAG, "------------ RUN TIMES --------: " + i);
@@ -352,7 +354,7 @@ public class MainActivity extends Activity {
             Results res = new Results("Divisors", "dividend", "ms", "ms", -6);
             long div_secondary = DIVIDEND;
             int experiment_id = 0;
-            for (int i = -1; i < ITERATIONS + 1; i++) {
+            for (int i = -1; i < ITERATIONS * 2; i++) {
                 Log.d(TAG, "Divisors - Starting up: native");
                 start_time = System.nanoTime();
                 div_native_result = getDivisors(div_secondary);
@@ -366,7 +368,7 @@ public class MainActivity extends Activity {
                 div_java_time = end_time - start_time;
 
                 if (i >= 0) res.addTriple(div_secondary, div_native_time, div_java_time);
-                div_secondary *= 10;
+                div_secondary *= 3;
                 deleteCache();
             }
             //TODO run 5 times with different dividend
@@ -388,7 +390,7 @@ public class MainActivity extends Activity {
 
             res = new Results("Random", "Array-size", "ms", "ms", -6);
             Results res2 = new Results("Array-order", "Array-size", "ms", "ms", -6);
-            for (int i = -1; i < ITERATIONS; i++) {
+            for (int i = -1; i < ITERATIONS * 2; i++) {
                 Log.d(TAG, "Random - Starting up: native");
                 start_time = System.nanoTime();
                 random_native_result = generateRandom(false, array_size);
@@ -419,7 +421,8 @@ public class MainActivity extends Activity {
 
                 if (i >= 0) res2.addTriple(array_size, array_native_time, array_java_time);
 
-                array_size *= 2;
+                //Square root of 2 (approximately)
+                array_size *= ARRAY_SIZE_MULTIPLIER;
                 deleteCache();
             }
             if (CURRENT_RUN_ID == 0) {
