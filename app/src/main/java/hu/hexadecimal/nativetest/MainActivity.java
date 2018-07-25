@@ -93,7 +93,7 @@ public class MainActivity extends Activity {
 
     //Devices with less than 4 cores will take too long time finding huge prime numbers
     final int CORES = Runtime.getRuntime().availableProcessors();
-    final int MINUS_ITERATIONS = CORES / 4 == 0 ? -3 : -5;
+    final int PLUS_ITERATIONS = CORES / 4 == 0 ? ITERATIONS / 2 : ITERATIONS;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,6 +126,12 @@ public class MainActivity extends Activity {
             public void run() {
                 for (int i = 0; i < RUNS; i++) {
                     try {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                runcounter.setText("Current run:\t" + (CURRENT_RUN_ID + 1) + "/" + RUNS);
+                            }
+                        });
                         if (t != null && t.isAlive()) {
                             t.join();
                             //Restore array size to original
@@ -133,12 +139,6 @@ public class MainActivity extends Activity {
                         }
                         CURRENT_RUN_ID = i;
                         Log.w(TAG, "------------ RUN TIMES --------: " + i);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                runcounter.setText("Current run:\t" + (CURRENT_RUN_ID + 1) + "/" + RUNS);
-                            }
-                        });
                         t = new Thread(toRun);
                         t.start();
                     } catch (InterruptedException e) {
@@ -168,7 +168,7 @@ public class MainActivity extends Activity {
         final Thread save = new Thread(new Runnable() {
             @Override
             public void run() {
-                //Wait a bit, just in case the user hasn't yet allowed saving and tests are done
+                //Wait a bit, just in case the user hasn't yet allowed saving and tests are done (unlikely)
                 SystemClock.sleep(5000);
                 try {
                     runMore.join();
@@ -177,10 +177,18 @@ public class MainActivity extends Activity {
                 }
                 if (allResult.size() % EXPERIMENTS != 0) {
                     Log.e(TAG, "There is an incorrect number of EXPERIMENTS!");
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            runcounter.setText("An error occurred while testing, cannot save results!");
+                            save_failbit = true;
+                        }
+                    });
                     return;
                 }
                 for (Results r : allResult) {
                     //No check for whether this storage is available!
+                    //Also no check for write permission!
                     File f = new File(Environment.getExternalStorageDirectory() + "/Results-" + r.getName() + ".csv");
                     try (Writer writer = new BufferedWriter(new OutputStreamWriter(
                             new FileOutputStream(f), "UTF-8"))) {
@@ -223,6 +231,7 @@ public class MainActivity extends Activity {
                         if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
                             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
                         }
+                        //start test operations
                         runMore.start();
                         save.start();
                     }
@@ -245,6 +254,7 @@ public class MainActivity extends Activity {
                 incr.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        //Updates message in dialog even if currently is on screen
                         d.setMessage(Html.fromHtml(String.format(Locale.ENGLISH, message, ++RUNS)));
                     }
                 });
@@ -469,7 +479,7 @@ public class MainActivity extends Activity {
             res = new Results("Primes", "Max prime", "ms", "ms", 0);
             int prime_secondary = MAX_PRIME;
             //Prime finding is a very long algorithm, ITERATIONS -1 can up to 5 min on a double-core device
-            for (int i = -1; i < ITERATIONS - MINUS_ITERATIONS; i++) {
+            for (int i = -1; i < ITERATIONS + PLUS_ITERATIONS; i++) {
                 Log.d(TAG, "Primes - Starting up: native");
                 start_time = System.currentTimeMillis();
                 prime_native_result = primesUntilX(prime_secondary);
