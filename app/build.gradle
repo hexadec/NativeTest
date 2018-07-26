@@ -9,6 +9,10 @@ android {
             storePassword 'Matematika5'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
     compileSdkVersion 27
     defaultConfig {
         applicationId "hu.hexadecimal.nativetest"

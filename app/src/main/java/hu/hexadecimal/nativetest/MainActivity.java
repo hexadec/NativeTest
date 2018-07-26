@@ -39,7 +39,7 @@ public class MainActivity extends Activity {
 
     /* Constants for arrays and random numbers */
     static final int INITIAL_ARRAY_SIZE = 8192;
-    static final double ARRAY_SIZE_MULTIPLIER = 1.414; //sqrt(2)
+    static final double ARRAY_SIZE_MULTIPLIER = 1.41421; //sqrt(2)
     int array_size = INITIAL_ARRAY_SIZE;
     final int pos = 2040;
     final int min = 100;
@@ -116,6 +116,8 @@ public class MainActivity extends Activity {
         primer = findViewById(R.id.prime_result);
         final TextView runcounter = findViewById(R.id.runCounter);
         //-1 is not necessary as ITERATIONS start from -1!
+        //Add 0.5 to avoid problems due to rounding
+        //Allocate memory now to avoid OutOfMemory exceptions
         array = new int[(array_size * ((int) Math.pow(ARRAY_SIZE_MULTIPLIER, ITERATIONS * 2 + 0.5)))];
         array_native = new int[array.length];
         //Container for individual Results class
@@ -124,7 +126,7 @@ public class MainActivity extends Activity {
         final Thread runMore = new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i < RUNS; i++) {
+                for (int i = 0; i <= RUNS; i++) {
                     try {
                         runOnUiThread(new Runnable() {
                             @Override
@@ -134,6 +136,8 @@ public class MainActivity extends Activity {
                         });
                         if (t != null && t.isAlive()) {
                             t.join();
+                            if (i == RUNS)
+                                break;
                             //Restore array size to original
                             array_size = INITIAL_ARRAY_SIZE;
                         }
@@ -192,7 +196,10 @@ public class MainActivity extends Activity {
                     File f = new File(Environment.getExternalStorageDirectory() + "/Results-" + r.getName() + ".csv");
                     try (Writer writer = new BufferedWriter(new OutputStreamWriter(
                             new FileOutputStream(f), "UTF-8"))) {
-                        writer.write(r.toCSV(1));
+                        writer.append(BuildConfig.VERSION_NAME);
+                        writer.append('_');
+                        writer.append(r.toCSV(1));
+                        writer.flush();
                         writer.close();
                     } catch (IOException e) {
                         e.printStackTrace();

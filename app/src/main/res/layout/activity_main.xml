@@ -23,7 +23,7 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="91dp"
-        android:text="Random geneartion in progress.."
+        android:text="Random generation in progress.."
         android:textAlignment="center" />
 
     <TextView
