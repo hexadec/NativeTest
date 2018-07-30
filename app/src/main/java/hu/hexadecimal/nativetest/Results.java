@@ -41,7 +41,7 @@ public class Results {
     }
 
     /**
-     * Adds and independent - dependent pair to the class
+     * Adds an independent - dependent pair to the class
      * @param parameter independent variable
      * @param resultCPP dependent variable (C++)
      * @param resultJava dependent variable (Java)
@@ -113,7 +113,7 @@ public class Results {
      * @param weightOnr1 How many times should r1 be taken?
      * @return null if number of parameters is not equal, else the weighted average
      */
-    static Results average(Results r1, Results r2, int weightOnr1) {
+    public static Results average(Results r1, Results r2, int weightOnr1) {
         int size = r1.parameterList.size();
         if (size != r2.parameterList.size()) return null;
         Results ravg = new Results(r1.name, r1.paramUnit, r1.resultUnitCPP, r1.resultUnitJava, r1.resultDecimalOffset);
@@ -138,7 +138,7 @@ public class Results {
      * @param r2
      * @return null if number of parameters is not equal, else the average
      */
-    static Results average(Results r1, Results r2) {
+    public static Results average(Results r1, Results r2) {
         return average(r1, r2, 1);
     }
 }

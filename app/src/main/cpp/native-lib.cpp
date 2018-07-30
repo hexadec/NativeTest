@@ -28,6 +28,9 @@ int32_t pmax = 0;
 int32_t * l, *l1, *l2, *l3;
 int32_t pos0,pos1,pos2,pos3 = 0;
 
+int * array;
+bool allocated = false;
+
 void calc(int32_t from, int32_t to, int32_t * pos, int32_t * arr) {
     for (; from < to; from++) {
         int32_t c = sqrt(from);
@@ -103,6 +106,10 @@ extern "C" JNIEXPORT jlong JNICALL Java_hu_hexadecimal_nativetest_MainActivity_g
 
 extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_generateRandom(JNIEnv *env, jobject jobj, jboolean which, jint size)
 {
+    //free previously allocated memory
+    if (allocated) {
+        delete [] array;
+    }
     if (which)
         number = min - 1;
     array_size = (int32_t) size;
@@ -110,10 +117,10 @@ extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_ge
     //Use linear congruency generator, as Java does
     std::minstd_rand generator(rd());
     std::uniform_int_distribution<int> uni(min, max);
-    int * array = new int[array_size];
-    for (int i = 0; i < array_size; i++)
-        array[i] = uni(generator);
-
+    array = new int[array_size];
+    allocated = true;
+    std::generate(array, (array+array_size), [=]() mutable { return uni(generator); });
+    //LOGI("1: %i, /2: %i, last: %i", array[0], array[array_size/2], array[array_size - 1]);
     return (jint) (array[pos] = number);
 
 }
