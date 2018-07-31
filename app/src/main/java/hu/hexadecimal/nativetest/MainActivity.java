@@ -3,7 +3,6 @@ package hu.hexadecimal.nativetest;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -11,7 +10,6 @@ import android.os.Environment;
 import android.os.SystemClock;
 import android.text.Html;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -123,149 +121,109 @@ public class MainActivity extends Activity {
         //Container for individual Results class
         allResult = new LinkedList<>();
         //Not using UI thread w/ long operations to avoid being killed
-        final Thread runMore = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i <= RUNS; i++) {
-                    try {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                runcounter.setText("Current run:\t" + (CURRENT_RUN_ID + 1) + "/" + RUNS);
-                            }
-                        });
-                        if (t != null && t.isAlive()) {
-                            t.join();
-                            if (i == RUNS)
-                                break;
-                            //Restore array size to original
-                            array_size = INITIAL_ARRAY_SIZE;
-                        }
-                        CURRENT_RUN_ID = i;
-                        Log.w(TAG, "------------ RUN TIMES --------: " + i);
-                        t = new Thread(toRun);
-                        t.start();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                        Log.e(TAG, "Fail in runMore");
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(MainActivity.this, "Failed to run experiment multiple times...", Toast.LENGTH_LONG).show();
-                            }
-                        });
-                        break;
-                    } catch (IllegalThreadStateException ie) {
-                        ie.printStackTrace();
-                        Log.e(TAG, "Fail in runMore - illegal thread state...");
+        final Thread runMore = new Thread(() -> {
+            for (int i = 0; i <= RUNS; i++) {
+                try {
+                    runOnUiThread(() -> {
+                        runcounter.setText("Current run:\t" + (CURRENT_RUN_ID + 1) + "/" + RUNS);
+                    });
+                    if (t != null && t.isAlive()) {
+                        t.join();
+                        if (i == RUNS)
+                            break;
+                        //Restore array size to original
+                        array_size = INITIAL_ARRAY_SIZE;
                     }
+                    CURRENT_RUN_ID = i;
+                    Log.w(TAG, "------------ RUN TIMES --------: " + i);
+                    t = new Thread(toRun);
+                    t.start();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "Fail in runMore");
+                    runOnUiThread(() -> {
+                        Toast.makeText(MainActivity.this, "Failed to run experiment multiple times...", Toast.LENGTH_LONG).show();
+                    });
+                    break;
+                } catch (IllegalThreadStateException ie) {
+                    ie.printStackTrace();
+                    Log.e(TAG, "Fail in runMore - illegal thread state...");
                 }
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        runcounter.setText("DONE!");
-                    }
-                });
             }
+            runOnUiThread(() -> runcounter.setText("DONE!"));
         });
 
-        final Thread save = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                //Wait a bit, just in case the user hasn't yet allowed saving and tests are done (unlikely)
-                SystemClock.sleep(5000);
-                try {
-                    runMore.join();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                if (allResult.size() % EXPERIMENTS != 0) {
-                    Log.e(TAG, "There is an incorrect number of EXPERIMENTS!");
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            runcounter.setText("An error occurred while testing, cannot save results!");
-                            save_failbit = true;
-                        }
-                    });
-                    return;
-                }
-                for (Results r : allResult) {
-                    //No check for whether this storage is available!
-                    //Also no check for write permission!
-                    File f = new File(Environment.getExternalStorageDirectory() + "/Results-" + r.getName() + ".csv");
-                    try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-                            new FileOutputStream(f), "UTF-8"))) {
-                        writer.append(BuildConfig.VERSION_NAME);
-                        writer.append('_');
-                        writer.append(r.toCSV(1));
-                        writer.flush();
-                        writer.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        Log.e(TAG, "Cannot save results! -- " + r.getName());
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                runcounter.setText("Cannot save files, please enable Storage permission in settings");
-                                save_failbit = true;
-                            }
-                        });
-                        //Pointless to continue loop
-                        break;
-                    }
-                }
-                if (!save_failbit) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            runcounter.setText(runcounter.getText() + "\nFiles saved (" + allResult.size() + ")");
-                        }
-                    });
-                }
-                Log.w(TAG, "Files written: " + allResult.size());
+        final Thread save = new Thread(() -> {
+            //Wait a bit, just in case the user hasn't yet allowed saving and tests are done (unlikely)
+            SystemClock.sleep(5000);
+            try {
+                runMore.join();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+            if (allResult.size() % EXPERIMENTS != 0) {
+                Log.e(TAG, "There is an incorrect number of EXPERIMENTS!");
+                runOnUiThread(() -> {
+                    runcounter.setText("An error occurred while testing, cannot save results!");
+                    save_failbit = true;
+                });
+                return;
+            }
+            for (Results res : allResult) {
+                //No check for whether this storage is available!
+                //Also no check for write permission!
+                File f = new File(Environment.getExternalStorageDirectory() + "/Results-" + res.getName() + ".csv");
+                try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+                        new FileOutputStream(f), "UTF-8"))) {
+                    writer.append(BuildConfig.VERSION_NAME);
+                    writer.append('_');
+                    writer.append(res.toCSV(1));
+                    writer.flush();
+                    writer.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "Cannot save results! -- " + res.getName());
+                    runOnUiThread(() -> {
+                        runcounter.setText("Cannot save files, please enable Storage permission in settings");
+                        save_failbit = true;
+                    });
+                    //Pointless to continue loop
+                    break;
+                }
+            }
+            if (!save_failbit) {
+                runOnUiThread(() -> runcounter.setText(runcounter.getText() + "\nFiles saved (" + allResult.size() + ")"));
+            }
+            Log.w(TAG, "Files written: " + allResult.size());
         });
         //Show this on every startup allowing customizations and info
         AlertDialog.Builder adb = new AlertDialog.Builder(MainActivity.this);
         adb.setIcon(android.R.drawable.ic_dialog_alert)
                 .setTitle("NativeTest informations")
                 .setMessage(Html.fromHtml(String.format(Locale.ENGLISH, message, RUNS)))
-                .setPositiveButton("Start now", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        //Suppose the user knows that it is considered stupid to disallow data saving...
-                        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
-                            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
-                        }
-                        //start test operations
-                        runMore.start();
-                        save.start();
+                .setPositiveButton("Start now", (dialog, which) -> {
+                    //Suppose the user knows that it is considered stupid to disallow data saving...
+                    if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+                        requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
                     }
+                    //start test operations
+                    runMore.start();
+                    save.start();
                 })
-                .setNegativeButton("Exit", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        deleteCache();
-                        finish();
-                    }
+                .setNegativeButton("Exit", (dialog, which) -> {
+                    deleteCache();
+                    finish();
                 })
                 .setNeutralButton("+1 run", null)
                 .setCancelable(false);
         final AlertDialog d = adb.create();
         //This way the dialog wont close after one click on +1
-        d.setOnShowListener(new DialogInterface.OnShowListener() {
-            @Override
-            public void onShow(DialogInterface dialog) {
-                Button incr = d.getButton(AlertDialog.BUTTON_NEUTRAL);
-                incr.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        //Updates message in dialog even if currently is on screen
-                        d.setMessage(Html.fromHtml(String.format(Locale.ENGLISH, message, ++RUNS)));
-                    }
-                });
-            }
+        d.setOnShowListener(dialog -> {
+            Button incr = d.getButton(AlertDialog.BUTTON_NEUTRAL);
+            incr.setOnClickListener((v) -> {
+                //Updates message in dialog even if currently is on screen
+                d.setMessage(Html.fromHtml(String.format(Locale.ENGLISH, message, ++RUNS)));
+            });
         });
         d.show();
     }
@@ -313,24 +271,9 @@ public class MainActivity extends Activity {
         arr1 = new int[max / 3 * 2];
         arr2 = new int[max / 3 * 2];
         arr3 = new int[max / 2];
-        Thread t0 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                pos0 = calculate(2, x / 4, arr0);
-            }
-        });
-        Thread t1 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                pos1 = calculate(x / 4, x / 2, arr1);
-            }
-        });
-        Thread t2 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                pos2 = calculate(x / 2, x / 4 * 3, arr2);
-            }
-        });
+        Thread t0 = new Thread(() -> pos0 = calculate(2, x / 4, arr0));
+        Thread t1 = new Thread(() -> pos1 = calculate(x / 4, x / 2, arr1));
+        Thread t2 = new Thread(() -> pos2 = calculate(x / 2, x / 4 * 3, arr2));
         t0.start();
         t1.start();
         t2.start();
@@ -394,13 +337,9 @@ public class MainActivity extends Activity {
                 deleteCache();
             }
             //Use UI/Main Thread to do work on UI elements
-            runOnUiThread(new Runnable() {
-
-                @Override
-                public void run() {
-                    divr.setText(Html.fromHtml("<b>Divisors </b>(" + DIVIDEND + ")<br/>Native: " + String.format(Locale.ENGLISH, "%.1f", div_native_time / 1000000.0) + " ms\nJava: " + String.format(Locale.ENGLISH, "%.1f", div_java_time / 1000000.0) + " ms"));
-                    Toast.makeText(MainActivity.this, div_native_result + "/" + div_java_result, Toast.LENGTH_SHORT).show();
-                }
+            runOnUiThread(() -> {
+                divr.setText(Html.fromHtml("<b>Divisors </b>(" + DIVIDEND + ")<br/>Native: " + String.format(Locale.ENGLISH, "%.1f", div_native_time / 1000000.0) + " ms\nJava: " + String.format(Locale.ENGLISH, "%.1f", div_java_time / 1000000.0) + " ms"));
+                Toast.makeText(MainActivity.this, div_native_result + "/" + div_java_result, Toast.LENGTH_SHORT).show();
             });
             if (CURRENT_RUN_ID == 0) {
                 allResult.addLast(res);
@@ -465,22 +404,14 @@ public class MainActivity extends Activity {
                 allResult.add(experiment_id++, res2);
             }
 
-            runOnUiThread(new Runnable() {
-
-                @Override
-                public void run() {
-                    randomr.setText(Html.fromHtml("<b>Random integer generation: </b>(" + array_size / 2 + ")<br/>Native: " + String.format(Locale.ENGLISH, "%.1f", random_native_time / 1000000.0) + " ms\nJava: " + String.format(Locale.ENGLISH, "%.1f", random_java_time / 1000000.0) + " ms"));
-                    Toast.makeText(MainActivity.this, random_native_result + "/" + random_java_result, Toast.LENGTH_SHORT).show();
-                }
+            runOnUiThread(() -> {
+                randomr.setText(Html.fromHtml("<b>Random integer generation: </b>(" + array_size / 2 + ")<br/>Native: " + String.format(Locale.ENGLISH, "%.1f", random_native_time / 1000000.0) + " ms\nJava: " + String.format(Locale.ENGLISH, "%.1f", random_java_time / 1000000.0) + " ms"));
+                Toast.makeText(MainActivity.this, random_native_result + "/" + random_java_result, Toast.LENGTH_SHORT).show();
             });
 
-            runOnUiThread(new Runnable() {
-
-                @Override
-                public void run() {
-                    arrayr.setText(Html.fromHtml("<b>Arrays order: </b>(" + array_size / 2 + ")<br/>Native: " + String.format(Locale.ENGLISH, "%.1f", array_native_time / 1000000.0) + " ms\nJava: " + String.format(Locale.ENGLISH, "%.1f", array_java_time / 1000000.0) + " ms"));
-                    Toast.makeText(MainActivity.this, array_native_result + "/" + array_java_result, Toast.LENGTH_SHORT).show();
-                }
+            runOnUiThread(() -> {
+                arrayr.setText(Html.fromHtml("<b>Arrays order: </b>(" + array_size / 2 + ")<br/>Native: " + String.format(Locale.ENGLISH, "%.1f", array_native_time / 1000000.0) + " ms\nJava: " + String.format(Locale.ENGLISH, "%.1f", array_java_time / 1000000.0) + " ms"));
+                Toast.makeText(MainActivity.this, array_native_result + "/" + array_java_result, Toast.LENGTH_SHORT).show();
             });
 
             res = new Results("Primes", "Max prime", "ms", "ms", 0);
@@ -522,13 +453,9 @@ public class MainActivity extends Activity {
                 allResult.add(experiment_id++, res);
             }
 
-            runOnUiThread(new Runnable() {
-
-                @Override
-                public void run() {
-                    primer.setText(Html.fromHtml("<b>MultiThreading / Prime finding: </b>(" + MAX_PRIME + ")<br/>Native: " + prime_native_time + " ms\nJava: " + prime_java_time + " ms"));
-                    Toast.makeText(MainActivity.this, prime_native_result.length + "/" + prime_java_result, Toast.LENGTH_SHORT).show();
-                }
+            runOnUiThread(() -> {
+                primer.setText(Html.fromHtml("<b>MultiThreading / Prime finding: </b>(" + MAX_PRIME + ")<br/>Native: " + prime_native_time + " ms\nJava: " + prime_java_time + " ms"));
+                Toast.makeText(MainActivity.this, prime_native_result.length + "/" + prime_java_result, Toast.LENGTH_SHORT).show();
             });
         }
     };

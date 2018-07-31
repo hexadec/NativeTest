@@ -119,7 +119,7 @@ extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_ge
     std::uniform_int_distribution<int> uni(min, max);
     array = new int[array_size];
     allocated = true;
-    std::generate(array, (array+array_size), [=]() mutable { return uni(generator); });
+    std::generate(array, (array+array_size), [&]() mutable { return uni(generator); });
     //LOGI("1: %i, /2: %i, last: %i", array[0], array[array_size/2], array[array_size - 1]);
     return (jint) (array[pos] = number);
 

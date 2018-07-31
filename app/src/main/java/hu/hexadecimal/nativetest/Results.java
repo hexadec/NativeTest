@@ -62,8 +62,7 @@ public class Results {
     }
 
     /**
-     * Calculates the number of parameters / independent variables stored
-     * @return
+     * @return the number of parameters / independent variables stored
      */
     public int getSize() {
         return parameterList.size();
@@ -109,7 +108,6 @@ public class Results {
      * Calculate the average of those results that have the same parameter
      * in the same order
      * @param r1 returned Results will inherit its name and units
-     * @param r2
      * @param weightOnr1 How many times should r1 be taken?
      * @return null if number of parameters is not equal, else the weighted average
      */
@@ -135,7 +133,6 @@ public class Results {
      * Calculate the average of those results that have the same parameter
      * in the same order, both are of the same weight
      * @param r1 returned Results will inherit its name and units
-     * @param r2
      * @return null if number of parameters is not equal, else the average
      */
     public static Results average(Results r1, Results r2) {
