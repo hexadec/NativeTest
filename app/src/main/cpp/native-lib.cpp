@@ -93,6 +93,16 @@ extern "C" JNIEXPORT jstring JNICALL Java_hu_hexadecimal_nativetest_MainActivity
     return env->NewStringUTF(hello.c_str());
 }
 
+extern "C" JNIEXPORT jint JNICALL Java_hu_hexadecimal_nativetest_MainActivity_findTextInString(
+        JNIEnv *env,
+        jobject /* this */, jbyteArray str) {
+    jbyte * array = env->GetByteArrayElements(str, 0);
+    std::string toFind = "findThisText";
+    std::string toSearch(reinterpret_cast<char *>(array));
+    std::size_t pos = toSearch.find(toFind);
+    return reinterpret_cast<jint>(static_cast<int>(pos));
+}
+
 extern "C" JNIEXPORT jlong JNICALL Java_hu_hexadecimal_nativetest_MainActivity_getDivisors(JNIEnv *env, jobject jobj, jlong number)
 {
     int64_t divs = 1;

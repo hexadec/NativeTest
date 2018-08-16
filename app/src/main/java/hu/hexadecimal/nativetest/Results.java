@@ -78,9 +78,9 @@ public class Results {
         builder.append(name);
         builder.append("\n");
         builder.append(paramUnit);
-        builder.append(",");
+        builder.append(",C++ ");
         builder.append(resultUnitCPP);
-        builder.append(",");
+        builder.append(",Java ");
         builder.append(resultUnitJava);
         builder.append(",\n");
         StringBuilder pattern = new StringBuilder("0");

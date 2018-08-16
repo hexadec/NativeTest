@@ -5,7 +5,7 @@ android {
         config {
             keyAlias 'hex@dec'
             keyPassword 'Matematika5'
-            storeFile file('/home/hexadec/Android/APPS/hexadecimal.key')
+            storeFile file('D:/android_apps/hexadecimal.key')
             storePassword 'Matematika5'
         }
     }
@@ -18,8 +18,8 @@ android {
         applicationId "hu.hexadecimal.nativetest"
         minSdkVersion 23
         targetSdkVersion 27
-        versionCode 2
-        versionName "0.0.2"
+        versionCode 3
+        versionName "0.1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {

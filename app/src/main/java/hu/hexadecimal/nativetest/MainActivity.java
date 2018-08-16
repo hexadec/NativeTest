@@ -61,7 +61,7 @@ public class MainActivity extends Activity {
     int CURRENT_RUN_ID = 0;
 
     /* How many experiments do we have? */
-    static final int EXPERIMENTS = 4;
+    static final int EXPERIMENTS = 5;
 
     /* Times */
     long start_time, end_time = 0;
@@ -69,6 +69,7 @@ public class MainActivity extends Activity {
     long random_native_time, random_java_time = 0;
     long array_native_time, array_java_time = 0;
     long prime_native_time, prime_java_time = 0;
+    long string_native_time, string_java_time = 0;
 
     /* Results */
     long div_native_result, div_java_result = 0;
@@ -76,14 +77,17 @@ public class MainActivity extends Activity {
     int array_native_result, array_java_result = 0;
     int[] prime_native_result;
     int prime_java_result = 0;
+    int string_native_result, string_java_result = 0;
 
     /* Variables */
     long DIVIDEND = 1000;
     final int MAX_PRIME = 20000;
-    TextView divr, randomr, arrayr, primer;
+    TextView divr, randomr, arrayr, primer, stringer;
     LinkedList<Results> allResult;
     Thread t;
     boolean save_failbit = false;
+    final int INITIAL_STRING = 32768;
+    int string_size = INITIAL_STRING;
 
     final String message = "The app will run the tests <b><u>%d" +
             "</b></u> times, and the average of these will be saved to the corresponding files. " +
@@ -112,6 +116,7 @@ public class MainActivity extends Activity {
         randomr = findViewById(R.id.random_result);
         arrayr = findViewById(R.id.array_result);
         primer = findViewById(R.id.prime_result);
+        stringer = findViewById(R.id.string_result);
         final TextView runcounter = findViewById(R.id.runCounter);
         //-1 is not necessary as ITERATIONS start from -1!
         //Add 0.5 to avoid problems due to rounding
@@ -419,21 +424,23 @@ public class MainActivity extends Activity {
             //Prime finding is a very long algorithm, ITERATIONS -1 can up to 5 min on a double-core device
             for (int i = -1; i < ITERATIONS + PLUS_ITERATIONS; i++) {
                 Log.d(TAG, "Primes - Starting up: native");
-                start_time = System.currentTimeMillis();
+                start_time = System.nanoTime();
                 prime_native_result = primesUntilX(prime_secondary);
-                end_time = System.currentTimeMillis();
+                end_time = System.nanoTime();
                 prime_native_time = end_time - start_time;
+                prime_native_time /= 1000000;
 
                 Log.i(TAG, "1. " + prime_native_result[0] + " Half. " +
                         prime_native_result[prime_native_result.length / 2] + " Max. " +
                         prime_native_result[prime_native_result.length - 1]);
 
                 Log.d(TAG, "Native done, starting java");
-                start_time = System.currentTimeMillis();
+                start_time = System.nanoTime();
                 primesUntilXJava(prime_secondary);
                 prime_java_result = pos0;
-                end_time = System.currentTimeMillis();
+                end_time = System.nanoTime();
                 prime_java_time = end_time - start_time;
+                prime_java_time /= 1000000;
 
                 Log.i(TAG, "1. " + arr0[0] + " Half. (" +
                         prime_java_result / 2 + ") " +
@@ -457,8 +464,77 @@ public class MainActivity extends Activity {
                 primer.setText(Html.fromHtml("<b>MultiThreading / Prime finding: </b>(" + MAX_PRIME + ")<br/>Native: " + prime_native_time + " ms\nJava: " + prime_java_time + " ms"));
                 Toast.makeText(MainActivity.this, prime_native_result.length + "/" + prime_java_result, Toast.LENGTH_SHORT).show();
             });
+
+            res = new Results("String-search", "String length", "ms", "ms", -6);
+            string_size = INITIAL_STRING;
+            String toSearch;
+            final String toFind = "findThisText";
+            for (int i = -1; i < ITERATIONS * 2; i++) {
+                Log.d(TAG, "String-search: starting native");
+                toSearch = generateRandomString(string_size);
+                toSearch += toFind;
+                byte[] toSearchBytes = toSearch.getBytes();
+                start_time = System.nanoTime();
+                string_native_result = findTextInString(toSearchBytes);
+                end_time = System.nanoTime();
+                string_native_time = end_time - start_time;
+
+                Log.d(TAG, "Native done, starting java");
+                start_time = System.nanoTime();
+                string_java_result = toSearch.indexOf(toFind);
+                end_time = System.nanoTime();
+                string_java_time = end_time - start_time;
+
+                if (i == -1 && CURRENT_RUN_ID == 0) {
+                    File f = new File(Environment.getExternalStorageDirectory() + "/Results-StrSearData.csv");
+                    try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+                            new FileOutputStream(f), "UTF-8"))) {
+                        writer.write(toSearch);
+                        writer.flush();
+                        writer.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Error while saving text");
+                    }
+                }
+
+                if (i >= 0) res.addTriple(string_size, string_native_time, string_java_time);
+                string_size *= ARRAY_SIZE_MULTIPLIER;
+                deleteCache();
+            }
+            if (CURRENT_RUN_ID == 0) {
+                allResult.addLast(res);
+            } else {
+                //Same as before... (#avg)
+                res = Results.average(allResult.get(experiment_id), res, 1 + CURRENT_RUN_ID);
+                allResult.remove(experiment_id);
+                allResult.add(experiment_id++, res);
+            }
+
+            runOnUiThread(() -> {
+                stringer.setText(Html.fromHtml("<b>String-search: </b>(" + string_size + ")<br/>Native: " + String.format(Locale.ENGLISH, "%.1f", string_native_time / 1000000.0) + " ms\nJava: " + String.format(Locale.ENGLISH, "%.1f", string_java_time / 1000000.0) + " ms"));
+                Toast.makeText(MainActivity.this, string_native_result + "/" + string_java_result, Toast.LENGTH_SHORT).show();
+            });
         }
     };
+
+    public static String generateRandomString(int length) {
+        byte[] upper = new byte[]{0x41, 0x5A};
+        byte[] lower = new byte[]{0x61, 0x7a};
+        Random random = new Random();
+        byte[] container = new byte[length];
+        for (int i = 0; i < length; i++) {
+            byte x = (byte) random.nextInt();
+            if (x % 7 == 0) {
+                container[i] = 0x20;
+            } else if (x % 4 == 0){
+                container[i] = (byte) (random.nextInt(upper[1] - upper[0]) + upper[0]);
+            } else {
+                container[i] = (byte) (random.nextInt(lower[1] - lower[0]) + lower[0]);
+            }
+        }
+        return new String(container);
+    }
 
     public native long getDivisors(long number);
 
@@ -467,6 +543,8 @@ public class MainActivity extends Activity {
     public native int orderArray(int[] array, int size);
 
     public native int[] primesUntilX(int x);
+
+    public native int findTextInString(byte[] toFind);
 
     @Override
     protected void onDestroy() {
