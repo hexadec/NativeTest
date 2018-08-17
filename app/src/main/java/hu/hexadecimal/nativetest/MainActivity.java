@@ -470,18 +470,24 @@ public class MainActivity extends Activity {
             String toSearch;
             final String toFind = "findThisText";
             for (int i = -1; i < ITERATIONS * 2; i++) {
+
                 Log.d(TAG, "String-search: starting native");
                 toSearch = generateRandomString(string_size);
                 toSearch += toFind;
-                byte[] toSearchBytes = toSearch.getBytes();
+                //Convert string to byte array, as this is the usual format in which
+                //Data is stored and/or forwarded
+                final byte[] toSearchBytes = toSearch.getBytes();
                 start_time = System.nanoTime();
                 string_native_result = findTextInString(toSearchBytes);
                 end_time = System.nanoTime();
                 string_native_time = end_time - start_time;
 
                 Log.d(TAG, "Native done, starting java");
+                //Use separate byte-array, just in case anything happened with the previous one
+                //That would alter the results
+                final byte[] toSearchJavaBytes = toSearch.getBytes();
                 start_time = System.nanoTime();
-                string_java_result = toSearch.indexOf(toFind);
+                string_java_result = new String(toSearchJavaBytes).indexOf(toFind);
                 end_time = System.nanoTime();
                 string_java_time = end_time - start_time;
 
@@ -566,6 +572,7 @@ public class MainActivity extends Activity {
                 deleteFolder(sub);
             }
         }
+        folder.delete();
 
     }
 
